@@ -6,6 +6,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 20px; /* Space between cards */
+  margin-bottom: 80px;
 }
 
 .frame-card {
@@ -16,7 +17,7 @@
   padding: 15px;
   cursor: pointer;
   transition: box-shadow 0.3s ease-in-out;
-  margin-bottom: 80px;
+ 
   max-height: 270px;
 }
 

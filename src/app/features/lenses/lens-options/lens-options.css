@@ -2,6 +2,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 20px; /* Space between cards */
+  margin-bottom: 100px;
 }
 
 .lens-card {
