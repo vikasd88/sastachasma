@@ -64,6 +64,7 @@ img {
   flex-wrap: wrap;
   gap: 20px;
   justify-content: center;
+  padding: 20px;
 }
 
 .other-lens-card {
@@ -90,9 +91,15 @@ img {
 }
 
 @media (max-width: 480px) {
+  .lens-detail button{
+    margin-top: 15px;
+    width: 200px;
+    margin-left: 55px;
+  }
   .other-lens-card {
     flex: 1 1 100%; /* 1 card per row on mobile */
   }
+  
 }
 
 .other-lens-image {
