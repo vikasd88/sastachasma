@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 export interface OrderItem {
-  id: number;
+  id: string;
   name: string;
   price: number;
   quantity: number;

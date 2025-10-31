@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { CartItem, CartService } from '../../../services/cart';
+import { CartService } from '../../../services/cart';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms'; // Import FormsModule
+import { ConfiguredProduct } from '../../../shared/models/configured-product';
 
 @Component({
   selector: 'app-cart',
@@ -14,7 +15,7 @@ import { FormsModule } from '@angular/forms'; // Import FormsModule
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CartComponent implements OnInit {
-  cartItems: (CartItem & { sanitizedImageUrl: SafeUrl })[] = [];
+  cartItems: (ConfiguredProduct & { sanitizedImageUrl: SafeUrl })[] = [];
   subtotal: number = 0;
   taxRate: number = 0.05; // 5% tax
   otherCharges: number = 10; // e.g., shipping fee
@@ -33,10 +34,10 @@ export class CartComponent implements OnInit {
   }
 
   loadCartItems(): void {
-    this.cartService.getCartItems().then((items: CartItem[]) => {
+    this.cartService.getCartItems().then((items: ConfiguredProduct[]) => {
       this.cartItems = items.map(item => ({
         ...item,
-        sanitizedImageUrl: this.sanitizer.bypassSecurityTrustUrl(item.imageUrl)
+        sanitizedImageUrl: this.sanitizer.bypassSecurityTrustUrl(item.frame.imageUrl) // Use frame.imageUrl
       }));
       this.calculateTotals();
       this.cdr.detectChanges();
@@ -44,12 +45,12 @@ export class CartComponent implements OnInit {
   }
 
   calculateTotals(): void {
-    this.subtotal = this.cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    this.subtotal = this.cartItems.reduce((sum, item) => sum + item.totalPrice, 0); // Use totalPrice
     this.taxAmount = this.subtotal * this.taxRate;
     this.totalAmount = this.subtotal + this.taxAmount + this.otherCharges;
   }
 
-  updateQuantity(itemId: number, event: Event): void {
+  updateQuantity(itemId: string, event: Event): void {
     const newQuantity = Number((event.target as HTMLInputElement).value);
     if (newQuantity > 0) {
       this.cartService.updateItemQuantity(itemId, newQuantity).then(() => {
@@ -62,7 +63,7 @@ export class CartComponent implements OnInit {
     this.cdr.detectChanges(); // Ensure UI is updated after any quantity change, including removal
   }
 
-  removeFromCart(itemId: number): void {
+  removeFromCart(itemId: string): void {
     this.cartService.removeFromCart(itemId).then(() => {
       this.loadCartItems(); // Reload cart after removal
     });

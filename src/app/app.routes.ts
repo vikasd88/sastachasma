@@ -19,22 +19,6 @@ export const routes: Routes = [
     data: { title: 'Frame Details - Sasta Chasma', description: 'View detailed information about our premium eyeglasses frames. Choose from a wide range of styles and materials.' } // This can be made dynamic later
   },
 
-  // 🔍 Lens selection
-  {
-    path: 'lenses',
-    loadComponent: () =>
-      import('./features/lenses/lens-options/lens-options.component')
-        .then(m => m.LensOptionsComponent),
-    data: { title: 'Select Lenses - Sasta Chasma', description: 'Explore our selection of high-quality lenses for all your vision needs. Find single vision, bifocal, and progressive lenses.' }
-  },
-  {
-    path: 'lenses/:id',
-    loadComponent: () =>
-      import('./features/lenses/lens-detail/lens-detail.component')
-        .then(m => m.LensDetailComponent),
-    data: { title: 'Lens Details - Sasta Chasma', description: 'Get detailed specifications and pricing for our various lens options. Customize your lenses with coatings and treatments.' } // This can be made dynamic later
-  },
-
   // 🛒 Cart & Checkout
   {
     path: 'cart',

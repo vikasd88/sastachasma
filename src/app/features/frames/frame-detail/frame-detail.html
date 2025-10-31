@@ -3,9 +3,50 @@
     <img [src]="frame.sanitizedImageUrl" [alt]="frame.name" class="detail-image">
     <h2>{{ frame.name }}</h2>
     <p>{{ frame.description }}</p>
-    <p class="detail-price">${{ frame.price }}</p>
-    <button (click)="selectLenses()">Select Lenses</button>
+    <p class="detail-price">₹{{ frame.price }}</p>
+
+    <div class="lens-selection">
+      <label for="lensType">Lens Type:</label>
+      <select id="lensType" class="form-control" [(ngModel)]="selectedLens!.id" (change)="onLensSelect($event)">
+        @for (lens of allLenses; track lens.id) {
+          <option [value]="lens.id">{{ lens.type }} - ₹{{ lens.price }}</option>
+        }
+      </select>
+    </div>
+
+    @if (selectedLens && (selectedLens.type === 'Single Vision' || selectedLens.type === 'Progressive')) {
+    <div class="power-selection">
+      <label for="power">Power:</label>
+      <input type="number" id="power" class="form-control" [(ngModel)]="power" step="0.25" placeholder="e.g., -1.50 or +2.00">
+    </div>
+    }
+
+    <div class="quantity-selector">
+      <label for="quantity">Quantity:</label>
+      <input type="number" id="quantity" class="form-control" [(ngModel)]="quantity" min="1" value="1">
+    </div>
+
+    <button (click)="addToCart()">Add to Cart</button>
   </div>
+
+  @if (otherFrames.length > 0) {
+    <div class="other-frames-section">
+      <h3>Other Frames You Might Like</h3>
+      <div class="other-frames-container">
+        @for (otherFrame of otherFrames; track otherFrame.id) {
+          <div class="other-frame-card">
+            <img [src]="otherFrame.sanitizedImageUrl" [alt]="otherFrame.name" class="other-frame-image">
+            <h4>{{ otherFrame.name }}</h4>
+            <p class="other-frame-price">₹{{ otherFrame.price }}</p>
+            <div class="other-frame-actions">
+              <button (click)="addOtherFrameToCart(otherFrame)">Add to Cart</button>
+              <button (click)="viewOtherFrameDetails(otherFrame.id)">View Details</button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
 } @else {
   <div class="frame-detail">
     <p>Frame not found.</p>

@@ -11,15 +11,6 @@ export const serverRoutes: ServerRoute[] = [
     },
   },
   {
-    path: 'lenses/:id',
-    renderMode: RenderMode.Prerender,
-    getPrerenderParams: async () => {
-      // Similarly, fetch lens IDs from your data source.
-      // For this example, we'll provide some placeholder IDs.
-      return [{ id: '1' }, { id: '2' }, { id: '3' }];
-    },
-  },
-  {
     path: '**',
     renderMode: RenderMode.Server,
   },

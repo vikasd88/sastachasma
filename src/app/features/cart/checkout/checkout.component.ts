@@ -2,9 +2,10 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnInit }
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { CartItem, CartService } from '../../../services/cart';
+import { CartService } from '../../../services/cart';
 import { FormsModule } from '@angular/forms';
 import { OrderService } from '../../../services/order';
+import { ConfiguredProduct } from '../../../shared/models/configured-product';
 
 @Component({
   selector: 'app-checkout',
@@ -15,7 +16,7 @@ import { OrderService } from '../../../services/order';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CheckoutComponent implements OnInit {
-  cartItems: (CartItem & { sanitizedImageUrl: SafeUrl })[] = [];
+  cartItems: (ConfiguredProduct & { sanitizedImageUrl: SafeUrl })[] = [];
   subtotal: number = 0;
   taxRate: number = 0.05; // 5% tax
   otherCharges: number = 10; // e.g., shipping fee
@@ -47,10 +48,10 @@ export class CheckoutComponent implements OnInit {
   }
 
   loadCartItems(): void {
-    this.cartService.getCartItems().then((items: CartItem[]) => {
+    this.cartService.getCartItems().then((items: ConfiguredProduct[]) => {
       this.cartItems = items.map(item => ({
         ...item,
-        sanitizedImageUrl: this.sanitizer.bypassSecurityTrustUrl(item.imageUrl)
+        sanitizedImageUrl: this.sanitizer.bypassSecurityTrustUrl(item.frame.imageUrl) // Use frame.imageUrl
       }));
       this.calculateTotals();
       this.cdr.detectChanges();
@@ -58,7 +59,7 @@ export class CheckoutComponent implements OnInit {
   }
 
   calculateTotals(): void {
-    this.subtotal = this.cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    this.subtotal = this.cartItems.reduce((sum, item) => sum + item.totalPrice, 0); // Use totalPrice
     this.taxAmount = this.subtotal * this.taxRate;
     this.totalAmount = this.subtotal + this.taxAmount + this.otherCharges;
   }
@@ -70,7 +71,7 @@ export class CheckoutComponent implements OnInit {
     }
 
     this.orderService.placeOrder(
-      this.cartItems.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity })),
+      this.cartItems.map(item => ({ id: item.id, name: `${item.frame.name} (${item.lens.type} ${item.power})`, price: item.totalPrice, quantity: item.quantity })),
       this.totalAmount,
       this.customer.name,
       this.deliveryAddress

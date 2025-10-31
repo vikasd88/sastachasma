@@ -3,10 +3,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Lens, LensService } from '../../../services/lens';
-import { CartItem, CartService } from '../../../services/cart';
+import { CartService } from '../../../services/cart';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
+import { ConfiguredProduct } from '../../../shared/models/configured-product';
 
 @Component({
   selector: 'app-lens-detail',
@@ -69,14 +70,15 @@ export class LensDetailComponent implements OnInit, OnDestroy {
 
   addToCart(): void {
     if (this.lens) {
-      const cartItem: CartItem = {
-        id: this.lens.id,
-        name: this.lens.type,
-        price: this.lens.price,
+      const configuredProduct: ConfiguredProduct = {
+        id: `${this.lens.id}-single-lens-0`, // Unique ID for single lens product
+        frame: { id: 0, name: 'No Frame', description: '', price: 0, imageUrl: '' }, // Placeholder for frame
+        lens: this.lens,
+        power: 0, // Default power for single lens
         quantity: this.quantity,
-        imageUrl: this.lens.imageUrl
+        totalPrice: this.lens.price * this.quantity,
       };
-      this.cartService.addToCart(cartItem).then(() => {
+      this.cartService.addToCart(configuredProduct).then(() => {
         console.log(`Added ${this.lens?.type} to cart.`);
         // Optionally show a confirmation message or update cart icon
         this.cdr.detectChanges(); // Manually trigger change detection if cart icon/count is present
@@ -85,14 +87,15 @@ export class LensDetailComponent implements OnInit, OnDestroy {
   }
 
   addOtherLensToCart(lens: Lens): void {
-    const cartItem: CartItem = {
-      id: lens.id,
-      name: lens.type,
-      price: lens.price,
+    const configuredProduct: ConfiguredProduct = {
+      id: `${lens.id}-single-lens-0`, // Unique ID for single lens product
+      frame: { id: 0, name: 'No Frame', description: '', price: 0, imageUrl: '' }, // Placeholder for frame
+      lens: lens,
+      power: 0, // Default power for single lens
       quantity: 1, // Default quantity for other lenses
-      imageUrl: lens.imageUrl
+      totalPrice: lens.price * 1,
     };
-    this.cartService.addToCart(cartItem).then(() => {
+    this.cartService.addToCart(configuredProduct).then(() => {
       // Optionally show a confirmation message or update cart icon
       console.log(`Added ${lens.type} to cart.`);
       this.cdr.detectChanges(); // Update UI if cart icon/count is present

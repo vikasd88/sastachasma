@@ -5,7 +5,7 @@
     <h2>{{ lens.type }}</h2>
     <p><strong>Material:</strong> {{ lens.material }}</p>
     <p>{{ lens.description }}</p>
-    <p class="detail-price">${{ lens.price }}</p>
+    <p class="detail-price">₹{{ lens.price }}</p>
     <div class="quantity-selector">
       <label for="quantity">Quantity:</label>
       &nbsp;<input type="number" class="form-control" id="quantity" [(ngModel)]="quantity" min="1" value="1">
@@ -22,7 +22,7 @@
           <div class="other-lens-card">
             <img [src]="otherLens.sanitizedImageUrl" [alt]="otherLens.type" class="other-lens-image">
             <h4>{{ otherLens.type }}</h4>
-            <p class="other-lens-price">${{ otherLens.price }}</p>
+            <p class="other-lens-price">₹{{ otherLens.price }}</p>
             <div class="other-lens-actions">
               <button (click)="addOtherLensToCart(otherLens)">Add to Cart</button>
               <button (click)="viewOtherLensDetails(otherLens.id)">View Details</button>

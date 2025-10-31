@@ -8,20 +8,21 @@
           <h3>Order Summary</h3>
           @for (item of cartItems; track item.id) {
             <div class="cart-item">
-              <img [src]="item.sanitizedImageUrl" [alt]="item.name" class="cart-item-image">
+              <img [src]="item.sanitizedImageUrl" [alt]="item.frame.name + ' - ' + item.lens.type" class="cart-item-image">
               <div class="item-details">
-                <h4>{{ item.name }}</h4>
-                <p>Price: ${{ item.price | number:'1.2-2' }}</p>
+                <h4>{{ item.frame.name }} ({{ item.lens.type }} {{ item.power }} Diopters)</h4>
+                <p>Frame Price: ₹{{ item.frame.price | number:'1.2-2' }}</p>
+                <p>Lens Price: ₹{{ item.lens.price | number:'1.2-2' }}</p>
                 <p>Quantity: {{ item.quantity }}</p>
-                <p>Item Total: ${{ (item.price * item.quantity) | number:'1.2-2' }}</p>
+                <p>Item Total: ₹{{ item.totalPrice | number:'1.2-2' }}</p>
               </div>
             </div>
           }
           <div class="totals">
-            <p>Subtotal: ${{ subtotal | number:'1.2-2' }}</p>
-            <p>Tax ({{ taxRate | percent }}) : ${{ taxAmount | number:'1.2-2' }}</p>
-            <p>Other Charges: ${{ otherCharges | number:'1.2-2' }}</p>
-            <h3>Total: ${{ totalAmount | number:'1.2-2' }}</h3>
+            <p>Subtotal: ₹{{ subtotal | number:'1.2-2' }}</p>
+            <p>Tax ({{ taxRate | percent }}) : ₹{{ taxAmount | number:'1.2-2' }}</p>
+            <p>Other Charges: ₹{{ otherCharges | number:'1.2-2' }}</p>
+            <h3>Total: ₹{{ totalAmount | number:'1.2-2' }}</h3>
           </div>
         </div>
       </div>
@@ -62,6 +63,6 @@
     </div>
   } @else {
     <p>Your cart is empty. Please add items before proceeding to checkout.</p>
-    <button (click)="router.navigate(['/lenses'])">Continue Shopping</button>
+    <button (click)="router.navigate(['/'])">Continue Shopping</button>
   }
 </div>

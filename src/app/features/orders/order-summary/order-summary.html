@@ -16,12 +16,12 @@
       <h3>Items</h3>
       @for (item of currentOrder.items; track item.id) {
         <div class="order-item">
-          <p>{{ item.name }} (x{{ item.quantity }}) - ${{ (item.price * item.quantity) | number:'1.2-2' }}</p>
+          <p>{{ item.name }} (x{{ item.quantity }}) - ₹{{ (item.price * item.quantity) | number:'1.2-2' }}</p>
         </div>
       }
 
       <div class="order-total">
-        <h3>Total Amount: ${{ currentOrder.total | number:'1.2-2' }}</h3>
+        <h3>Total Amount: ₹{{ currentOrder.total | number:'1.2-2' }}</h3>
       </div>
     </div>
 
