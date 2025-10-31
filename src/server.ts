@@ -6,6 +6,7 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import { serverRoutes } from './app/app.routes.server';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -62,6 +63,7 @@ if (isMainModule(import.meta.url)) {
   });
 }
 
+/**
 /**
  * Request handler used by the Angular CLI (for dev-server and during build) or Firebase Cloud Functions.
  */
