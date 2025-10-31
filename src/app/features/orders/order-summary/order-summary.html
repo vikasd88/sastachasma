@@ -1,0 +1,33 @@
+<div class="order-summary-container">
+  <h2>Order Summary</h2>
+
+  @if (order; as currentOrder) {
+    <div class="order-details">
+      <p><strong>Order ID:</strong> {{ currentOrder.id }}</p>
+      <p><strong>Order Date:</strong> {{ currentOrder.date | date:'medium' }}</p>
+
+      <h3>Customer Information</h3>
+      <p><strong>Name:</strong> {{ currentOrder.customerName }}</p>
+      <p><strong>Delivery Address:</strong>
+        {{ currentOrder.deliveryAddress.street }}, {{ currentOrder.deliveryAddress.city }},
+        {{ currentOrder.deliveryAddress.state }} - {{ currentOrder.deliveryAddress.zip }}
+      </p>
+
+      <h3>Items</h3>
+      @for (item of currentOrder.items; track item.id) {
+        <div class="order-item">
+          <p>{{ item.name }} (x{{ item.quantity }}) - ${{ (item.price * item.quantity) | number:'1.2-2' }}</p>
+        </div>
+      }
+
+      <div class="order-total">
+        <h3>Total Amount: ${{ currentOrder.total | number:'1.2-2' }}</h3>
+      </div>
+    </div>
+
+    <button (click)="goToHome()">Continue Shopping</button>
+  } @else {
+    <p>No order found.</p>
+    <button (click)="goToHome()">Go to Home</button>
+  }
+</div>

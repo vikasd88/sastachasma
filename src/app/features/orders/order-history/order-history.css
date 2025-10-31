@@ -1,0 +1,60 @@
+.order-history-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 20px auto;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+.order-list {
+  display: grid;
+  gap: 20px;
+}
+
+.order-card {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.order-card p {
+  margin: 0;
+  color: #555;
+}
+
+.order-card strong {
+  color: #333;
+}
+
+.order-card button {
+  align-self: flex-end;
+  padding: 8px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.order-card button:hover {
+  background-color: #0056b3;
+}
+
+.order-history-container > p {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 1.1em;
+  color: #777;
+}

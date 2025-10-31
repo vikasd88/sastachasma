@@ -1,0 +1,13 @@
+footer {
+  background-color: #343a40; /* Dark background for footer */
+  color: #ffffff;
+  text-align: center;
+  padding: 20px 0;
+  width: 100%;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05); /* Soft shadow for depth */
+}
+
+footer p {
+  margin: 0;
+  font-size: 0.9em;
+}

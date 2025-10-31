@@ -1,0 +1,19 @@
+<div class="lens-options">
+  <h2>Select Your Lenses</h2>
+  @if (lenses.length > 0) {
+    <div class="lens-cards-container">
+      @for (lens of lenses; track lens.id) {
+        <div class="lens-card" (click)="selectLens(lens.id)">
+          <img [src]="lens.sanitizedImageUrl" [alt]="lens.type" class="lens-image">
+          <h3>{{ lens.type }}</h3>
+          <p>{{ lens.description }}</p>
+          <p class="price">${{ lens.price }}</p>
+        </div>
+      }
+    </div>
+  } @else {
+    <ng-template #noLenses>
+      <p>No lens options available at the moment.</p>
+    </ng-template>
+  }
+</div>

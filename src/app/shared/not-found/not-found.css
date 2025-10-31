@@ -1,0 +1,41 @@
+.not-found-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 70vh; /* Adjust as needed */
+  text-align: center;
+  background-color: #f8f9fa;
+  color: #343a40;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 50px auto;
+}
+
+h1 {
+  font-size: 8em;
+  margin-bottom: 10px;
+  color: #dc3545; /* Bootstrap red for error */
+}
+
+p {
+  font-size: 1.5em;
+  margin-bottom: 20px;
+}
+
+button {
+  padding: 12px 25px;
+  background-color: #007bff; /* Bootstrap primary blue */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #0056b3;
+}

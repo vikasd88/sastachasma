@@ -1,0 +1,53 @@
+/* You can add global styles to this file, and also import other style files */
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+app-header {
+  /* Assuming header has a height, e.g., 60px */
+  display: block; /* Ensures it takes up space in the flow */
+  height: 60px; /* Example fixed height for header */
+}
+
+app-navbar {
+  /* Assuming navbar has a height, e.g., 50px */
+  display: block; /* Ensures it takes up space in the flow */
+  height: 50px; /* Example fixed height for navbar */
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  padding: 0;
+  background-color: #f0f2f5;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  /* Calculate padding for fixed header (header + navbar height) and footer */
+  padding-top: calc(60px + 50px); /* Adjust based on actual header and navbar height */
+  padding-bottom: 70px; /* Adjust based on actual footer height */
+}
+
+main {
+  flex: 1;
+  overflow-y: auto;
+  /* No need for min-height here if padding on body is correct */
+}
+
+app-footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 70px; /* Example fixed height for footer */
+  background-color: #343a40; /* Match existing footer background */
+  color: #ffffff;
+  z-index: 1000; /* Ensure footer stays on top */
+}
+
+.container {
+  max-width: 1100px;
+  margin: 20px auto 100px;
+  padding: 0 20px;
+}

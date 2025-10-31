@@ -1,0 +1,40 @@
+<div class="lens-div-main">
+@if (lens) {
+  <div class="lens-detail">
+    <img [src]="lens.sanitizedImageUrl" [alt]="lens.type" class="detail-image">
+    <h2>{{ lens.type }}</h2>
+    <p><strong>Material:</strong> {{ lens.material }}</p>
+    <p>{{ lens.description }}</p>
+    <p class="detail-price">${{ lens.price }}</p>
+    <div class="quantity-selector">
+      <label for="quantity">Quantity:</label>
+      &nbsp;<input type="number" id="quantity" [(ngModel)]="quantity" min="1" value="1">
+      &nbsp;&nbsp; <button (click)="addToCart()">Add to Cart</button>
+    </div>
+   
+  </div>
+
+  @if (otherLenses.length > 0) {
+    <div class="other-lenses-section">
+      <h3>Other Lenses You Might Like</h3>
+      <div class="other-lenses-container">
+        @for (otherLens of otherLenses; track otherLens.id) {
+          <div class="other-lens-card">
+            <img [src]="otherLens.sanitizedImageUrl" [alt]="otherLens.type" class="other-lens-image">
+            <h4>{{ otherLens.type }}</h4>
+            <p class="other-lens-price">${{ otherLens.price }}</p>
+            <div class="other-lens-actions">
+              <button (click)="addOtherLensToCart(otherLens)">Add to Cart</button>
+              <button (click)="viewOtherLensDetails(otherLens.id)">View Details</button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+} @else {
+  <div class="lens-detail">
+    <p>Lens not found.</p>
+  </div>
+}
+</div>

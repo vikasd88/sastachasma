@@ -1,0 +1,19 @@
+<div class="frame-list">
+  <h2>Our Frames</h2>
+  @if (frames.length > 0) {
+    <div class="frame-cards-container">
+      @for (frame of frames; track frame.id) {
+        <div class="frame-card" (click)="selectFrame(frame.id)">
+          <img [src]="frame.sanitizedImageUrl" [alt]="frame.name" class="frame-image">
+          <h3>{{ frame.name }}</h3>
+          <p>{{ frame.description }}</p>
+          <p class="price">${{ frame.price }}</p>
+        </div>
+      }
+    </div>
+  } @else {
+    <ng-template #noFrames>
+      <p>No frames available at the moment.</p>
+    </ng-template>
+  }
+</div>

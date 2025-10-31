@@ -1,0 +1,16 @@
+<nav>
+  <ul>
+    <li><a routerLink="/">Frames</a></li>
+    <li><a routerLink="/lenses">Lenses</a></li>
+    <li><a routerLink="/cart">Cart</a></li>
+    <li><a routerLink="/login">Login</a></li>
+    @if (cartItemCount > 0) {
+      <li class="cart-icon-container" (click)="goToCart()">
+        <a>
+          <i class="fas fa-shopping-cart"></i> <!-- Font Awesome cart icon -->
+          <span class="cart-count"> {{ cartItemCount }} </span>
+        </a>
+      </li>
+    }
+  </ul>
+</nav>

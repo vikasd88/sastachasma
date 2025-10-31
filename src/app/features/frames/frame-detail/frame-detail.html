@@ -1,0 +1,13 @@
+@if (frame) {
+  <div class="frame-detail">
+    <img [src]="frame.sanitizedImageUrl" [alt]="frame.name" class="detail-image">
+    <h2>{{ frame.name }}</h2>
+    <p>{{ frame.description }}</p>
+    <p class="detail-price">${{ frame.price }}</p>
+    <button (click)="selectLenses()">Select Lenses</button>
+  </div>
+} @else {
+  <div class="frame-detail">
+    <p>Frame not found.</p>
+  </div>
+}

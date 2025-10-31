@@ -1,0 +1,43 @@
+.frame-detail {
+  padding: 20px;
+  text-align: center;
+}
+
+.detail-image {
+  width: 150px;
+  height: 100px;
+  object-fit: contain; /* Ensures the entire image is visible within the dimensions */
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.frame-detail h2 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.frame-detail p {
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.detail-price {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #007bff;
+  margin-bottom: 20px;
+}
+
+.frame-detail button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+.frame-detail button:hover {
+  background-color: #218838;
+}

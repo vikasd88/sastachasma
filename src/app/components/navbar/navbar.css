@@ -1,0 +1,64 @@
+nav {
+  background-color: #ffffff; /* White background for consistency */
+  padding: 10px 20px;
+  border-bottom: 1px solid #e0e0e0; /* Subtle border */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Soft shadow */
+}
+
+nav ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+}
+
+nav ul li {
+  margin: 0 15px;
+  position: relative; /* Needed for positioning the cart count */
+}
+
+nav ul li a {
+  color: #555; /* Darker gray for links */
+  text-decoration: none;
+  font-weight: 500; /* Medium font weight */
+  transition: color 0.3s ease-in-out; /* Smooth hover effect */
+}
+
+nav ul li a:hover {
+  color: #007bff; /* Lenskart-like blue on hover */
+}
+
+.cart-icon-container {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.cart-icon-container a {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #fff;
+}
+
+.cart-icon-container i {
+  font-size: 1.5em; /* Adjust icon size as needed */
+  margin-right: 5px;
+}
+
+.cart-count {
+  background-color: #dc3545; /* Red circle for count */
+  color: white;
+  border-radius: 50%;
+  padding: 2px 7px;
+  font-size: 0.8em;
+  position: absolute;
+  top: -5px;
+  right: -10px; /* Adjust position relative to the icon */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 20px; /* Ensures a good circle shape for single/double digits */
+  height: 20px;
+}
