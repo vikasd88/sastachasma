@@ -16,6 +16,8 @@
   padding: 15px;
   cursor: pointer;
   transition: box-shadow 0.3s ease-in-out;
+  margin-bottom: 80px;
+  max-height: 270px;
 }
 
 @media (max-width: 768px) {
