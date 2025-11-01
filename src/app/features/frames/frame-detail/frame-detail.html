@@ -7,7 +7,7 @@
 
     <div class="lens-selection">
       <label for="lensType">Lens Type:</label>
-      <select id="lensType" class="form-control" [(ngModel)]="selectedLens!.id" (change)="onLensSelect($event)">
+      <select id="lensType" class="form-control" [(ngModel)]="selectedLensId" (change)="onLensSelect($event)">
         @for (lens of allLenses; track lens.id) {
           <option [value]="lens.id">{{ lens.type }} - ₹{{ lens.price }}</option>
         }

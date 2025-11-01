@@ -20,6 +20,7 @@ export class FrameDetailComponent implements OnInit {
   frame: (Frame & { sanitizedImageUrl: SafeUrl }) | undefined;
   allLenses: Lens[] = [];
   selectedLens: Lens | undefined;
+  selectedLensId: number | undefined; // Separate property for dropdown binding
   power: number = 0;
   quantity: number = 1;
   otherFrames: (Frame & { sanitizedImageUrl: SafeUrl })[] = []; // New property for other frames
@@ -49,6 +50,7 @@ export class FrameDetailComponent implements OnInit {
               this.allLenses = lenses;
               if (this.allLenses.length > 0) {
                 this.selectedLens = this.allLenses[0];
+                this.selectedLensId = this.allLenses[0].id; // Initialize selectedLensId
               }
               this.cdr.detectChanges();
             });
@@ -72,6 +74,7 @@ export class FrameDetailComponent implements OnInit {
 
   onLensSelect(event: Event): void {
     const selectedId = Number((event.target as HTMLSelectElement).value);
+    this.selectedLensId = selectedId; // Update selectedLensId
     this.selectedLens = this.allLenses.find(lens => lens.id === selectedId);
     this.cdr.detectChanges();
   }
