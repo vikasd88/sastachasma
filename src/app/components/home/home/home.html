@@ -1,0 +1,44 @@
+<div class="home-page">
+  <!-- Hero Section -->
+  <section class="hero-section bg-primary text-center py-5">
+    <div class="container">
+      <h1>Clear Vision, Affordable Price.</h1>
+      <p class="lead">Find your perfect pair of spectacles without breaking the bank.</p>
+      <a routerLink="/products" class="btn btn-lg btn-outline">Shop Now</a>
+    </div>
+  </section>
+
+  <!-- Featured Products Section -->
+  <section class="featured-products py-5">
+    <div class="container">
+      <h2 class="text-center mb-4">Featured Spectacles</h2>
+      <div *ngIf="loading" class="flex-center">
+        <div class="spinner"></div>
+      </div>
+      <div *ngIf="!loading" class="grid grid-4">
+        <app-product-card *ngFor="let product of featuredProducts" [product]="product" />
+      </div>
+      <div class="text-center mt-4">
+        <a routerLink="/products" class="btn btn-secondary">View All Products</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Value Proposition Section -->
+  <section class="value-proposition py-5 bg-light">
+    <div class="container grid grid-3 text-center">
+      <div class="card">
+        <h3 class="text-primary">Free Shipping</h3>
+        <p>On all orders above ₹500.</p>
+      </div>
+      <div class="card">
+        <h3 class="text-primary">30-Day Returns</h3>
+        <p>Not satisfied? Return within 30 days for a full refund.</p>
+      </div>
+      <div class="card">
+        <h3 class="text-primary">Best Price Guarantee</h3>
+        <p>We promise the most affordable prices for quality eyewear.</p>
+      </div>
+    </div>
+  </section>
+</div>

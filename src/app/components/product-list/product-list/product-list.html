@@ -1,0 +1,53 @@
+<div class="product-list-page container">
+  <h1 class="text-center mb-4">Spectacles Collection</h1>
+
+  <div class="content-wrapper">
+    <!-- Sidebar Filters -->
+    <aside class="sidebar card">
+      <h3 class="card-header">Filter Products</h3>
+      <div class="card-body">
+        <div class="form-group">
+          <label for="brand">Brand</label>
+          <select id="brand" [(ngModel)]="selectedBrand" (change)="onFilterChange()">
+            <option value="">All Brands</option>
+            <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="shape">Frame Shape</label>
+          <select id="shape" [(ngModel)]="selectedShape" (change)="onFilterChange()">
+            <option value="">All Shapes</option>
+            <option *ngFor="let shape of shapes" [value]="shape">{{ shape }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="color">Frame Color</label>
+          <select id="color" [(ngModel)]="selectedColor" (change)="onFilterChange()">
+            <option value="">All Colors</option>
+            <option *ngFor="let color of colors" [value]="color">{{ color }}</option>
+          </select>
+        </div>
+
+        <button class="btn btn-secondary w-100" (click)="clearFilters()">Clear Filters</button>
+      </div>
+    </aside>
+
+    <!-- Product Grid -->
+    <section class="product-grid-section">
+      <div *ngIf="loading" class="flex-center loading-indicator">
+        <div class="spinner"></div>
+        <p class="mt-2">Loading spectacles...</p>
+      </div>
+
+      <div *ngIf="!loading && filteredProducts.length === 0" class="alert alert-info">
+        No products found matching your criteria.
+      </div>
+
+      <div *ngIf="!loading && filteredProducts.length > 0" class="product-grid grid grid-3">
+        <app-product-card *ngFor="let product of filteredProducts" [product]="product" />
+      </div>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,57 @@
+.checkout-wrapper {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+.shipping-info .card-body {
+  padding: 1.5rem;
+}
+
+.shipping-info .grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.payment-method .card-body {
+  padding: 1.5rem;
+}
+
+.payment-method .form-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.payment-method input[type="radio"] {
+  margin-right: 0.5rem;
+}
+
+.order-summary .card-body {
+  padding: 1.5rem;
+}
+
+.order-summary .border-top {
+  border-top: 1px solid var(--border-color);
+}
+
+.total-row {
+  border-top: 2px solid var(--primary-color);
+  padding-top: 1rem;
+  margin-top: 1rem \!important;
+}
+
+.total-row h3 {
+  margin: 0;
+}
+
+@media (max-width: 992px) {
+  .checkout-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-summary-wrapper {
+    margin-top: 2rem;
+  }
+}
+

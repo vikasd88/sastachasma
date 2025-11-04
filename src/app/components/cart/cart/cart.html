@@ -1,0 +1,60 @@
+<div class="cart-page container">
+  <h1 class="text-center mb-4">Your Shopping Cart</h1>
+
+  <div *ngIf="cartItems.length === 0" class="alert alert-info text-center">
+    Your cart is empty. <a routerLink="/products">Start shopping now!</a>
+  </div>
+
+  <div *ngIf="cartItems.length > 0" class="cart-content-wrapper">
+    <!-- Cart Items List -->
+    <section class="cart-items-list">
+      <div *ngFor="let item of cartItems" class="cart-item card mb-3">
+        <div class="item-details flex">
+          <img [src]="item.product.image" [alt]="item.product.name" class="item-thumb" />
+          <div class="item-info">
+            <h4>{{ item.product.name }}</h4>
+            <p class="text-muted">Lens: {{ item.lens.type }}</p>
+            <p class="text-primary">Price: ₹{{ item.product.price + item.lens.price }}</p>
+          </div>
+        </div>
+        <div class="item-actions flex-center">
+          <input
+            type="number"
+            [value]="item.quantity"
+            min="1"
+            (change)="updateQuantity(item, $event)"
+            class="quantity-input"
+          />
+          <button class="btn btn-danger btn-sm" (click)="removeItem(item)">Remove</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cart Summary -->
+    <aside class="cart-summary card">
+      <h3 class="card-header">Order Summary</h3>
+      <div class="card-body">
+        <div class="flex-between mb-2">
+          <span>Subtotal ({{ cartItems.length }} items):</span>
+          <span>₹{{ cartTotal }}</span>
+        </div>
+        <div class="flex-between mb-2">
+          <span>Shipping:</span>
+          <span class="text-success">FREE</span>
+        </div>
+        <div class="flex-between total-row mt-3">
+          <h3>Total:</h3>
+          <h3 class="text-primary">₹{{ cartTotal }}</h3>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn btn-primary btn-lg w-100" routerLink="/checkout">
+          Proceed to Checkout
+        </button>
+        <button class="btn btn-outline w-100 mt-2" (click)="clearCart()">
+          Clear Cart
+        </button>
+      </div>
+    </aside>
+  </div>
+</div>

@@ -1,0 +1,24 @@
+<div class="product-card card" *ngIf="product">
+  <a [routerLink]="['/products', product.id]">
+    <div class="product-image-container">
+      <img [src]="product.image" [alt]="product.name" class="product-image" />
+      <div class="discount-badge badge badge-danger" *ngIf="product.discount > 0">
+        {{ product.discount }}% OFF
+      </div>
+    </div>
+  </a>
+  <div class="product-info">
+    <h3 class="product-name">{{ product.name }}</h3>
+    <p class="product-brand text-muted">{{ product.brand }}</p>
+    <div class="rating-price flex-between">
+      <app-star-rating [rating]="product.rating" [readonly]="true" [showCount]="false" />
+      <div class="price-group">
+        <span class="current-price text-primary">₹{{ product.price }}</span>
+        <span class="original-price text-muted">₹{{ product.originalPrice }}</span>
+      </div>
+    </div>
+    <button class="btn btn-primary w-100 mt-3" [routerLink]="['/products', product.id]">
+      View Details
+    </button>
+  </div>
+</div>

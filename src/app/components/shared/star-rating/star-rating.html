@@ -1,0 +1,13 @@
+<div class="star-rating">
+  <ng-container *ngFor="let star of stars; let i = index">
+    <span
+      class="star"
+      [class.filled]="star.filled || star.partialWidth !== '0%'"
+      (click)="rate(i + 1)"
+    >
+      <span class="star-full">★</span>
+      <span class="star-partial" [style.width]="star.partialWidth">★</span>
+    </span>
+  </ng-container>
+  <span *ngIf="showCount" class="rating-count">({{ rating }}/5)</span>
+</div>

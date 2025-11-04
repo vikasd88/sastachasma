@@ -1,0 +1,95 @@
+.customization-wrapper {
+  padding: 2rem;
+}
+
+.product-summary {
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.product-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  margin-right: 1rem;
+}
+
+.product-summary h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.product-summary p {
+  margin-bottom: 0;
+}
+
+.lens-selection .grid {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.lens-option {
+  padding: 1rem;
+  border: 2px solid var(--border-color);
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+  position: relative;
+}
+
+.lens-option:hover {
+  border-color: var(--primary-light);
+}
+
+.lens-option.selected {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
+}
+
+.lens-label {
+  display: block;
+  cursor: pointer;
+}
+
+.lens-label h4 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.lens-label .price {
+  display: block;
+  font-weight: 700;
+  color: var(--success-color);
+  margin-top: 0.5rem;
+}
+
+.hidden-radio {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.quantity-section {
+  align-items: center;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.quantity-input {
+  width: 80px;
+  text-align: center;
+}
+
+.order-summary {
+  padding-top: 1.5rem;
+}
+
+.order-summary h3 {
+  margin: 0;
+}
+

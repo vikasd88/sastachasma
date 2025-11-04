@@ -1,0 +1,178 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Classic Round Blue",
+      "brand": "ClearVision",
+      "price": 1299,
+      "originalPrice": 2499,
+      "discount": 48,
+      "rating": 4.5,
+      "reviews": 234,
+      "image": "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop",
+      "description": "Timeless round frame spectacles with blue tint coating. Perfect for daily wear with UV protection.",
+      "shape": "Round",
+      "material": "Acetate",
+      "color": "Blue",
+      "frameSize": "Medium",
+      "inStock": true
+    },
+    {
+      "id": 2,
+      "name": "Wayfarer Black",
+      "brand": "StyleFrame",
+      "price": 1599,
+      "originalPrice": 2999,
+      "discount": 47,
+      "rating": 4.7,
+      "reviews": 456,
+      "image": "https://images.unsplash.com/photo-1511499767150-a48a237f0816?w=400&h=400&fit=crop",
+      "description": "Trendy wayfarer style frames in classic black. Suitable for all face shapes.",
+      "shape": "Wayfarer",
+      "material": "Acetate",
+      "color": "Black",
+      "frameSize": "Large",
+      "inStock": true
+    },
+    {
+      "id": 3,
+      "name": "Cat Eye Rose Gold",
+      "brand": "FashionOptics",
+      "price": 1899,
+      "originalPrice": 3499,
+      "discount": 46,
+      "rating": 4.6,
+      "reviews": 312,
+      "image": "https://images.unsplash.com/photo-1508296695146-367180069fce?w=400&h=400&fit=crop",
+      "description": "Elegant cat eye frames in rose gold finish. Perfect for making a style statement.",
+      "shape": "Cat Eye",
+      "material": "Metal",
+      "color": "Rose Gold",
+      "frameSize": "Small",
+      "inStock": true
+    },
+    {
+      "id": 4,
+      "name": "Aviator Silver",
+      "brand": "ClassicLens",
+      "price": 1499,
+      "originalPrice": 2799,
+      "discount": 46,
+      "rating": 4.4,
+      "reviews": 189,
+      "image": "https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=400&h=400&fit=crop",
+      "description": "Iconic aviator style with silver metal frame. Timeless design for all occasions.",
+      "shape": "Aviator",
+      "material": "Metal",
+      "color": "Silver",
+      "frameSize": "Large",
+      "inStock": true
+    },
+    {
+      "id": 5,
+      "name": "Rectangular Brown",
+      "brand": "ModernVision",
+      "price": 1199,
+      "originalPrice": 2299,
+      "discount": 48,
+      "rating": 4.3,
+      "reviews": 145,
+      "image": "https://images.unsplash.com/photo-1559056199-641a0ac8b3f7?w=400&h=400&fit=crop",
+      "description": "Minimalist rectangular frames in warm brown. Great for professional settings.",
+      "shape": "Rectangular",
+      "material": "Acetate",
+      "color": "Brown",
+      "frameSize": "Medium",
+      "inStock": true
+    },
+    {
+      "id": 6,
+      "name": "Oversized Tortoise",
+      "brand": "TrendyFrames",
+      "price": 1799,
+      "originalPrice": 3299,
+      "discount": 45,
+      "rating": 4.8,
+      "reviews": 523,
+      "image": "https://images.unsplash.com/photo-1516302752625-fcc13bdf9b1d?w=400&h=400&fit=crop",
+      "description": "Bold oversized frames in tortoise shell pattern. Fashion-forward and comfortable.",
+      "shape": "Oversized",
+      "material": "Acetate",
+      "color": "Tortoise",
+      "frameSize": "Large",
+      "inStock": true
+    },
+    {
+      "id": 7,
+      "name": "Clubmaster Gold",
+      "brand": "VintageStyle",
+      "price": 1399,
+      "originalPrice": 2699,
+      "discount": 48,
+      "rating": 4.5,
+      "reviews": 267,
+      "image": "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop",
+      "description": "Retro clubmaster style with gold accents. Perfect blend of vintage and modern.",
+      "shape": "Clubmaster",
+      "material": "Mixed",
+      "color": "Gold",
+      "frameSize": "Medium",
+      "inStock": true
+    },
+    {
+      "id": 8,
+      "name": "Square Matte Black",
+      "brand": "MinimalDesign",
+      "price": 1599,
+      "originalPrice": 2999,
+      "discount": 47,
+      "rating": 4.6,
+      "reviews": 334,
+      "image": "https://images.unsplash.com/photo-1511499767150-a48a237f0816?w=400&h=400&fit=crop",
+      "description": "Contemporary square frames with matte black finish. Sophisticated and versatile.",
+      "shape": "Square",
+      "material": "Acetate",
+      "color": "Black",
+      "frameSize": "Medium",
+      "inStock": true
+    }
+  ],
+  "lenses": [
+    {
+      "id": 1,
+      "type": "Single Vision",
+      "price": 0,
+      "description": "Standard single vision lenses for clear vision at all distances"
+    },
+    {
+      "id": 2,
+      "type": "Blue Light Blocking",
+      "price": 499,
+      "description": "Protects eyes from digital screen blue light. Reduces eye strain."
+    },
+    {
+      "id": 3,
+      "type": "Anti-Reflective",
+      "price": 699,
+      "description": "Reduces glare and reflections for better clarity and appearance"
+    },
+    {
+      "id": 4,
+      "type": "Photochromic",
+      "price": 1299,
+      "description": "Automatically darkens in sunlight and clears indoors"
+    },
+    {
+      "id": 5,
+      "type": "Progressive",
+      "price": 1499,
+      "description": "Multi-focal lenses for seamless vision at all distances"
+    },
+    {
+      "id": 6,
+      "type": "Polarized",
+      "price": 899,
+      "description": "Reduces glare from reflective surfaces like water and snow"
+    }
+  ]
+}

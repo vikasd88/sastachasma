@@ -1,0 +1,50 @@
+<div class="product-detail-page container">
+  <div *ngIf="loading" class="flex-center loading-indicator">
+    <div class="spinner"></div>
+    <p class="mt-2">Loading product details...</p>
+  </div>
+
+  <div *ngIf="!loading && !product" class="alert alert-danger">
+    Product not found.
+  </div>
+
+  <div *ngIf="!loading && product" class="product-details-wrapper">
+    <div class="product-image-gallery">
+      <img [src]="product.image" [alt]="product.name" class="main-image card" />
+    </div>
+
+    <div class="product-info-panel">
+      <h1 class="product-name">{{ product.name }}</h1>
+      <p class="product-brand text-muted">{{ product.brand }}</p>
+
+      <div class="rating-reviews flex">
+        <app-star-rating [rating]="product.rating" [readonly]="true" [showCount]="true" />
+        <span class="text-muted ml-2">({{ product.reviews }} reviews)</span>
+      </div>
+
+      <div class="price-section mt-3">
+        <span class="current-price text-primary">₹{{ product.price }}</span>
+        <span class="original-price text-muted">₹{{ product.originalPrice }}</span>
+        <span class="discount-badge badge badge-danger ml-2">{{ product.discount }}% OFF</span>
+      </div>
+
+      <div class="description mt-4">
+        <h3>Product Description</h3>
+        <p>{{ product.description }}</p>
+      </div>
+
+      <div class="specs mt-4 grid grid-2">
+        <div><strong>Shape:</strong> {{ product.shape }}</div>
+        <div><strong>Material:</strong> {{ product.material }}</div>
+        <div><strong>Color:</strong> {{ product.color }}</div>
+        <div><strong>Size:</strong> {{ product.frameSize }}</div>
+      </div>
+
+      <div class="action-buttons mt-5">
+        <button class="btn btn-primary btn-lg w-100" (click)="customizeLens()">
+          Select Lenses & Buy
+        </button>
+      </div>
+    </div >
+  </div>
+</div>

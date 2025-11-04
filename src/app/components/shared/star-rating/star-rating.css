@@ -1,0 +1,42 @@
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  font-size: 1.2rem;
+  color: var(--border-color); /* Empty star color */
+}
+
+.star {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  line-height: 1;
+  color: inherit;
+  width: 1em; /* Ensure star takes up space */
+  height: 1em;
+}
+
+.star-full {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: inherit;
+}
+
+.star-partial {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  color: var(--warning-color); /* Filled star color */
+}
+
+.star.filled .star-full {
+  color: var(--warning-color);
+}
+
+.rating-count {
+  margin-left: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
