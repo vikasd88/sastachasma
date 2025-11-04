@@ -1,183 +1,187 @@
 <div class="track-order-container">
-  <div class="container">
-    <div class="track-order-content">
-      <h1 class="page-title">Track Your Order</h1>
-      <p class="page-subtitle">Enter your order details to check the status of your order</p>
-      
-      <!-- Order Tracking Form -->
-      <div class="track-form-container" *ngIf="!order">
-        <form [formGroup]="trackForm" (ngSubmit)="onTrackOrder()" class="track-form">
-          <div class="form-group">
-            <label for="orderId">Order ID</label>
-            <input 
-              type="text" 
-              id="orderId" 
-              formControlName="orderId"
-              placeholder="e.g. ORDER12345"
-              [class.error]="trackForm.get('orderId')?.invalid && trackForm.get('orderId')?.touched"
-            >
-            <div class="error-message" *ngIf="trackForm.get('orderId')?.hasError('required') && trackForm.get('orderId')?.touched">
-              Order ID is required
-            </div>
-            <div class="error-message" *ngIf="trackForm.get('orderId')?.hasError('minlength')">
-              Order ID must be at least 8 characters
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input 
-              type="email" 
-              id="email" 
-              formControlName="email"
-              placeholder="Enter your email address"
-              [class.error]="trackForm.get('email')?.invalid && trackForm.get('email')?.touched"
-            >
-            <div class="error-message" *ngIf="trackForm.get('email')?.hasError('required') && trackForm.get('email')?.touched">
-              Email is required
-            </div>
-            <div class="error-message" *ngIf="trackForm.get('email')?.hasError('email')">
-              Please enter a valid email address
-            </div>
-          </div>
-          
-          <button 
-            type="submit" 
-            class="btn btn-primary btn-block"
-            [disabled]="isLoading"
+  <div class="track-order-content">
+    <h1 class="page-title">Track Your Order</h1>
+    <p class="page-subtitle">Enter your order details to check the status of your order</p>
+
+    <!-- Order Tracking Form -->
+    <div class="track-form-container" *ngIf="!order?.orderId">
+      <form [formGroup]="trackForm" (ngSubmit)="onTrackOrder()" class="track-form">
+        <div class="form-group">
+          <label for="orderId">Order ID</label>
+          <input
+            type="text"
+            id="orderId"
+            formControlName="orderId"
+            placeholder="e.g. ORD-F3DABG4K"
+            [class.error]="trackForm.get('orderId')?.invalid && trackForm.get('orderId')?.touched"
+            required
           >
-            <span *ngIf="!isLoading">Track Order</span>
-            <span *ngIf="isLoading">
-              <i class="fas fa-spinner fa-spin"></i> Tracking...
-            </span>
-          </button>
-          
-          <div class="error-message mt-3" *ngIf="errorMessage">
-            {{ errorMessage }}
+          <div class="error-message" *ngIf="trackForm.get('orderId')?.hasError('required') && trackForm.get('orderId')?.touched">
+            Order ID is required
           </div>
-        </form>
-        
-        <div class="track-order-help">
-          <h3>Can't find your order details?</h3>
-          <ul>
-            <li>Check your email for the order confirmation</li>
-            <li>Look for an email from orders@sastachasma.com</li>
-            <li>Still can't find it? <a routerLink="/contact">Contact our support</a></li>
-          </ul>
+          <div class="error-message" *ngIf="trackForm.get('orderId')?.hasError('minlength')">
+            Order ID must be at least 3 characters
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            formControlName="email"
+            placeholder="Enter your email address"
+            [class.error]="trackForm.get('email')?.invalid && trackForm.get('email')?.touched"
+            required
+            email
+          >
+          <div class="error-message" *ngIf="trackForm.get('email')?.hasError('required') && trackForm.get('email')?.touched">
+            Email is required
+          </div>
+          <div class="error-message" *ngIf="trackForm.get('email')?.hasError('email')">
+            Please enter a valid email address
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-primary btn-block"
+          [disabled]="isLoading || trackForm.invalid"
+        >
+          <span *ngIf="!isLoading">Track Order</span>
+          <span *ngIf="isLoading">
+            <i class="fas fa-spinner fa-spin"></i> Tracking...
+          </span>
+        </button>
+
+        <div class="error-message mt-3" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+      </form>
+
+      <div class="track-order-help">
+        <h3>Can't find your order details?</h3>
+        <ul>
+          <li>Check your email for the order confirmation</li>
+          <li>Look for an email from orders@sastachasma.com</li>
+          <li>Still can't find it? <a routerLink="/contact">Contact our support</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Order Details -->
+    <div class="order-details" *ngIf="order">
+      <div class="order-header">
+        <div>
+          <h2>Order #{{ order.orderId }}</h2>
+          <p class="order-date">Placed on {{ formatDate(order.orderDate) }}</p>
+        </div>
+        <div class="order-status" [ngClass]="getStatusClass(currentStatus?.status || '')">
+          <i class="fas" [ngClass]="'fa-' + getStatusIcon(currentStatus?.status)"></i>
+          {{ (currentStatus?.status || '') | titlecase }}
         </div>
       </div>
-      
-      <!-- Order Details -->
-      <div class="order-details" *ngIf="order">
-        <div class="order-header">
-          <div>
-            <h2>Order #{{ order.orderId }}</h2>
-            <p class="order-date">Placed on {{ formatDate(order.orderDate) }}</p>
-          </div>
-          <div class="order-status" [ngClass]="getStatusClass(currentStatus?.status || '')">
-            <i class="fas fa-{{ getStatusIcon(currentStatus?.status || '') }}"></i>
-            {{ currentStatus?.status | titlecase }}
+
+      <!-- Order Progress -->
+      <div class="order-progress">
+        <div class="progress-steps">
+          <div
+            *ngFor="let status of statuses"
+            class="step"
+            [class.active]="isStatusActive(status)"
+            [class.completed]="isStatusCompleted(status)"
+          >
+            <div class="step-icon">
+              <i class="fas" [ngClass]="'fa-' + getStatusIcon(status)"></i>
+            </div>
+            <div class="step-label">{{ status | titlecase }}</div>
           </div>
         </div>
-        
-        <!-- Order Progress -->
-        <div class="order-progress">
-          <div class="progress-steps">
-            <div 
-              *ngFor="let status of ['processing', 'shipped', 'delivered']" 
-              class="step"
-              [class.active]="isStatusActive(status)"
-              [class.completed]="isStatusCompleted(status)"
-            >
-              <div class="step-icon">
-                <i class="fas fa-{{ getStatusIcon(status) }}"></i>
+      </div>
+
+      <!-- Order Items -->
+      <div class="order-items">
+        <h3>Order Items</h3>
+        <div class="items-list">
+          <div *ngFor="let item of order.items" class="order-item">
+            <img [src]="item.imageUrl || 'assets/images/placeholder-product.jpg'" [alt]="item.name" class="item-image">
+            <div class="item-details">
+              <h4>{{ item.name }}</h4>
+              <p class="item-quantity">Qty: {{ item.quantity || 1 }}</p>
+            </div>
+            <div class="item-price">
+              ₹{{ (item.price * (item.quantity || 1)) | number:'1.0-0' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Summary -->
+      <div class="order-summary">
+        <div class="summary-section">
+          <h3>Order Summary</h3>
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <span>₹{{ getOrderSubtotal() | number:'1.0-0' }}</span>
+          </div>
+          <div class="summary-row" *ngIf="order.shippingMethod">
+            <span>Shipping ({{ order.shippingMethod.name || 'Standard' }})</span>
+            <span>₹{{ order.shippingMethod.price | number:'1.0-0' }}</span>
+          </div>
+          <div class="summary-row total">
+            <span>Total</span>
+            <span>₹{{ getOrderTotal() | number:'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <div class="summary-section" *ngIf="order.shippingAddress">
+          <h3>Shipping Address</h3>
+          <address>
+            {{ order.shippingAddress.name }}<br>
+            {{ order.shippingAddress.street }}<br>
+            {{ order.shippingAddress.city }}, {{ order.shippingAddress.state }} - {{ order.shippingAddress.pincode }}<br>
+            {{ order.shippingAddress.phone }}
+          </address>
+        </div>
+
+        <div class="summary-section" *ngIf="order.payment">
+          <h3>Payment Method</h3>
+          <p>{{ order.payment.method | titlecase }} ({{ order.payment.status | titlecase }})</p>
+          <p *ngIf="order.payment.transactionId">Transaction ID: {{ order.payment.transactionId }}</p>
+        </div>
+      </div>
+
+      <!-- Status Timeline -->
+      <div class="status-timeline" *ngIf="order.statusHistory?.length">
+        <h3>Order Status</h3>
+        <div class="timeline">
+          <div *ngFor="let status of order.statusHistory" class="timeline-item">
+            <div class="timeline-marker"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <h4>{{ status.status | titlecase }}</h4>
+                <span class="timeline-date">{{ formatDate(status.date) }}</span>
               </div>
-              <div class="step-label">{{ status | titlecase }}</div>
+              <p>{{ status.description }}</p>
+              <p *ngIf="status.location" class="location">
+                <fa-icon [icon]="faMapMarkerAlt"></fa-icon> {{ status.location }}
+              </p>
             </div>
           </div>
         </div>
-        
-        <!-- Order Items -->
-        <div class="order-items">
-          <h3>Order Items</h3>
-          <div class="items-list">
-            <div *ngFor="let item of order.items" class="order-item">
-              <img [src]="item.imageUrl || 'assets/images/placeholder-product.jpg'" [alt]="item.name" class="item-image">
-              <div class="item-details">
-                <h4>{{ item.name }}</h4>
-                <p class="item-quantity">Qty: {{ item.quantity }}</p>
-              </div>
-              <div class="item-price">
-                ₹{{ item.price * item.quantity | number:'1.0-0' }}
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Order Summary -->
-        <div class="order-summary">
-          <div class="summary-section">
-            <h3>Order Summary</h3>
-            <div class="summary-row">
-              <span>Subtotal</span>
-              <span>₹{{ getOrderSubtotal() | number:'1.0-0' }}</span>
-            </div>
-            <div class="summary-row">
-              <span>Shipping</span>
-              <span>Free</span>
-            </div>
-            <div class="summary-row total">
-              <span>Total</span>
-              <span>₹{{ getOrderTotal() | number:'1.0-0' }}</span>
-            </div>
-          </div>
-          
-          <div class="summary-section">
-            <h3>Shipping Address</h3>
-            <address>
-              {{ order.shippingAddress.name }}<br>
-              {{ order.shippingAddress.street }}<br>
-              {{ order.shippingAddress.city }}, {{ order.shippingAddress.state }} - {{ order.shippingAddress.pincode }}<br>
-              {{ order.shippingAddress.phone }}
-            </address>
-          </div>
-          
-          <div class="summary-section">
-            <h3>Payment Method</h3>
-            <p>{{ order.payment.method }} ({{ order.payment.status | titlecase }})</p>
-            <p *ngIf="order.payment.transactionId">Transaction ID: {{ order.payment.transactionId }}</p>
-          </div>
-        </div>
-        
-        <!-- Status Timeline -->
-        <div class="status-timeline">
-          <h3>Order Status</h3>
-          <div class="timeline">
-            <div *ngFor="let status of order.statusHistory" class="timeline-item">
-              <div class="timeline-marker"></div>
-              <div class="timeline-content">
-                <div class="timeline-header">
-                  <h4>{{ status.status | titlecase }}</h4>
-                  <span class="timeline-date">{{ formatDate(status.date) }}</span>
-                </div>
-                <p>{{ status.description }}</p>
-                <p *ngIf="status.location" class="location">
-                  <i class="fas fa-map-marker-alt"></i> {{ status.location }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Action Buttons -->
-        <div class="action-buttons">
-          <button class="btn btn-outline" (click)="order = null">
-            <i class="fas fa-search"></i> Track Another Order
-          </button>
-          <button class="btn btn-primary" routerLink="/contact">
-            <i class="fas fa-headset"></i> Need Help?
-          </button>
-        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button type="button" class="btn btn-outline" (click)="order = null">
+          <fa-icon [icon]="faSearch"></fa-icon> Track Another Order
+        </button>
+        <button type="button" class="btn btn-primary" (click)="contactSupport()">
+          <fa-icon [icon]="faHeadset"></fa-icon> Need Help?
+        </button>
+        <button type="button" class="btn btn-print" (click)="printOrder()">
+          <fa-icon [icon]="faPrint"></fa-icon> Print Order
+        </button>
       </div>
     </div>
   </div>

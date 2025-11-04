@@ -7,10 +7,20 @@ import { OrderDetails, OrderStatus } from '../models/order.model';
   providedIn: 'root'
 })
 export class OrderService {
+  // Generate a random order ID with format ORD-XXXXXXX
+  private generateOrderId(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = 'ORD-';
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
   // Mock order data - in a real app, this would be an API call
   private mockOrders: { [key: string]: OrderDetails } = {
-    'ORDER12345': {
-      orderId: 'ORDER12345',
+    'ORD-F3DABG4K': {
+      orderId: 'ORD-F3DABG4K',
       customerName: 'Rahul Sharma',
       orderDate: new Date('2025-10-28T10:30:00'),
       estimatedDelivery: new Date('2025-11-05T18:00:00'),
@@ -65,42 +75,96 @@ export class OrderService {
 
   constructor() {}
 
+  private calculateEstimatedDelivery(): Date {
+    const date = new Date();
+    date.setDate(date.getDate() + 7); // 7 days from now
+    return date;
+  }
+
+  getOrderDetails(orderId: string): Observable<OrderDetails> {
+    const order = this.mockOrders[orderId];
+    if (order) {
+      return of(order).pipe(delay(500)); // Simulate network delay
+    } else {
+      return throwError(() => new Error('Order not found'));
+    }
+  }
+
   trackOrder(orderId: string, email: string): Observable<OrderDetails> {
+    // Convert to uppercase to handle case-insensitive matching
+    const normalizedOrderId = orderId.toUpperCase();
+    
     // Simulate API delay
     return of({}).pipe(
       delay(800),
       map(() => {
         // In a real app, this would be an HTTP request to your backend
-        const order = this.mockOrders[orderId];
+        const order = this.mockOrders[normalizedOrderId];
         
         if (!order) {
-          throw new Error('Order not found. Please check your order ID and email.');
-        }
-
-        // In a real app, you would validate the email against the order
-        if (email && !email.endsWith('@example.com')) {
           throw new Error('No order found with the provided details.');
         }
 
+        // In a real app, you would validate the email against the order
+        // For demo purposes, we'll just check if the email is provided
+        if (email && email.trim() === '') {
+          throw new Error('Please enter your email address.');
+        }
+        
         return order;
       })
     );
   }
 
-  // This would be called when the order is actually delivered
-  markAsDelivered(orderId: string): Observable<OrderStatus> {
-    const order = this.mockOrders[orderId];
-    if (!order) {
-      return throwError('Order not found');
-    }
+  // Mock method to create a new order
+  createOrder(orderData: any): Observable<{ orderId: string }> {
+    return new Observable(subscriber => {
+      try {
+        // Generate a new order ID with the specified format
+        const orderId = this.generateOrderId();
+        
+        // Create a new order with the generated ID
+        this.mockOrders[orderId] = {
+          orderId,
+          customerName: orderData.customerName || '',
+          orderDate: new Date(),
+          estimatedDelivery: this.calculateEstimatedDelivery(),
+          items: orderData.items || [],
+          statusHistory: [{
+            status: 'processing' as const,
+            date: new Date(),
+            description: 'Order received and is being processed.'
+          }],
+          shippingAddress: orderData.shippingAddress || {
+            name: '',
+            street: '',
+            city: '',
+            state: '',
+            pincode: '',
+            phone: ''
+          },
+          payment: {
+            method: orderData.paymentMethod || '',
+            status: 'completed' as const,
+            amount: orderData.totalAmount || 0,
+            transactionId: 'TXN' + Math.floor(10000000 + Math.random() * 90000000)
+          },
+          shippingMethod: orderData.shippingMethod || {
+            name: 'Standard',
+            price: 0,
+            estimatedDays: 5
+          },
+          discount: orderData.discount || 0
+        };
 
-    const newStatus: OrderStatus = {
-      status: 'delivered',
-      date: new Date(),
-      description: 'Your order has been delivered.'
-    };
-
-    order.statusHistory.push(newStatus);
-    return of(newStatus).pipe(delay(500));
+        // Simulate network delay
+        setTimeout(() => {
+          subscriber.next({ orderId });
+          subscriber.complete();
+        }, 500);
+      } catch (error) {
+        subscriber.error(error);
+      }
+    });
   }
 }

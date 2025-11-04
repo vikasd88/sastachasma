@@ -31,6 +31,12 @@ export interface PaymentDetails {
   transactionId?: string;
 }
 
+export interface ShippingMethod {
+  name: string;
+  price: number;
+  estimatedDays: number;
+}
+
 export interface OrderDetails {
   orderId: string;
   customerName: string;
@@ -40,4 +46,6 @@ export interface OrderDetails {
   statusHistory: OrderStatus[];
   shippingAddress: ShippingAddress;
   payment: PaymentDetails;
+  shippingMethod?: ShippingMethod;
+  discount?: number;
 }
