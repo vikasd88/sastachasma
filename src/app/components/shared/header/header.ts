@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { CartService } from '../../../services/cart.service';
 
 @Component({
@@ -8,16 +8,45 @@ import { CartService } from '../../../services/cart.service';
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './header.html',
-  styleUrl: './header.css',
+  styleUrl: './header.css'
 })
 export class HeaderComponent implements OnInit {
-  cartCount: number = 0;
+  @Input() cartCount = 0;
+  isMenuOpen = false;
+  isMobileView = false;
 
-  constructor(private cartService: CartService) {}
+  constructor(private cartService: CartService, private router: Router) {}
 
-  ngOnInit(): void {
+  ngOnInit() {
+    this.checkScreenWidth();
     this.cartService.cart$.subscribe(items => {
       this.cartCount = items.reduce((count, item) => count + item.quantity, 0);
     });
+  }
+
+  @HostListener('window:resize')
+  onResize() {
+    this.checkScreenWidth();
+  }
+
+  private checkScreenWidth(): void {
+    this.isMobileView = window.innerWidth <= 768;
+    if (!this.isMobileView) {
+      this.closeMenu();
+    }
+  }
+
+  toggleMenu(): void {
+    this.isMenuOpen = !this.isMenuOpen;
+    if (this.isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  }
+
+  closeMenu(): void {
+    this.isMenuOpen = false;
+    document.body.style.overflow = '';
   }
 }

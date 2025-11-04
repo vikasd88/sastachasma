@@ -1,20 +1,38 @@
 <header class="header">
-  <div class="container flex-between">
-    <a routerLink="/" class="logo">
-      <span class="logo-clear">Sasta</span><span class="logo-dekho">Chasma</span>
-    </a>
-    <nav class="nav-menu">
-      <a routerLink="/" routerLinkActive="active">Home</a>
-      <a routerLink="/products" routerLinkActive="active">Spectacles</a>
-      <a routerLink="/about" routerLinkActive="active">About Us</a>
-      <a routerLink="/contact" routerLinkActive="active">Contact</a>
-    </nav>
-    <div class="header-actions">
-      <a routerLink="/cart" class="cart-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-shopping-cart"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-        <span class="cart-count">{{ cartCount }}</span>
+  <div class="container">
+    <div class="header-container">
+      <button class="mobile-menu-toggle" (click)="toggleMenu()" aria-label="Toggle menu">
+        <span class="hamburger"></span>
+      </button>
+      
+      <a routerLink="/" class="logo">
+        <span class="logo-clear">Sasta</span><span class="logo-dekho">Chasma</span>
       </a>
+      
+      <nav class="nav-menu" [class.active]="isMenuOpen">
+        <a routerLink="/" routerLinkActive="active" (click)="closeMenu()">Home</a>
+        <a routerLink="/products" routerLinkActive="active" (click)="closeMenu()">Spectacles</a>
+        <a routerLink="/about" routerLinkActive="active" (click)="closeMenu()">About Us</a>
+        <a routerLink="/contact" routerLinkActive="active" (click)="closeMenu()">Contact</a>
+      </nav>
+      
+      <div class="header-actions">
+        <a routerLink="/cart" class="cart-icon" (click)="closeMenu()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-shopping-cart">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-count">{{ cartCount }}</span>
+        </a>
+      </div>
     </div>
+  </div>
+  
+  <!-- Overlay for mobile menu -->
+  <div class="mobile-menu-overlay" 
+       [class.active]="isMenuOpen" 
+       (click)="closeMenu()">
   </div>
 </header>
 
