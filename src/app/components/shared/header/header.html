@@ -12,6 +12,9 @@
       <nav class="nav-menu" [class.active]="isMenuOpen">
         <a routerLink="/" routerLinkActive="active" (click)="closeMenu()">Home</a>
         <a routerLink="/products" routerLinkActive="active" (click)="closeMenu()">Spectacles</a>
+        <a routerLink="/track-order" routerLinkActive="active" (click)="closeMenu()" class="track-order-link">
+          <i class="fas fa-box-open"></i> Track Order
+        </a>
         <a routerLink="/about" routerLinkActive="active" (click)="closeMenu()">About Us</a>
         <a routerLink="/contact" routerLinkActive="active" (click)="closeMenu()">Contact</a>
       </nav>

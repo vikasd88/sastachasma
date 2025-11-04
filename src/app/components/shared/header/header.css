@@ -30,26 +30,34 @@
   z-index: 101;
   margin-right: auto; /* Push logo and nav to the right */
 }
-
 .logo-clear {
   color: var(--primary-color);
 }
 
 .logo-dekho {
-  color: var(--secondary-color);
+  color: #000;
 }
 
-/* Mobile Menu Toggle */
-.mobile-menu-toggle {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 1rem;
-  z-index: 101;
-  position: relative;
-  width: 44px;
-  height: 44px;
-  display: none;
+/* Track Order Link */
+.track-order-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.track-order-link:hover {
+  color: var(--primary-color);
+  background-color: rgba(var(--primary-rgb), 0.1);
+}
+
+.track-order-link i {
+  font-size: 1.1rem;
+}
   align-items: center;
   justify-content: center;
   margin: 0;
@@ -187,11 +195,14 @@
   opacity: 1;
   visibility: visible;
 }
-
+.mobile-menu-toggle {
+  display: none;
+}
 /* Responsive Styles */
 @media (max-width: 768px) {
   .mobile-menu-toggle {
     display: block;
+    margin-right: 20px;
   }
 
   .header-container {
