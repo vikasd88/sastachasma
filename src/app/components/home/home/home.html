@@ -1,44 +1,185 @@
 <div class="home-page">
   <!-- Hero Section -->
-  <section class="hero-section bg-primary text-center py-5">
+  <section class="hero-section">
     <div class="container">
-      <h1>Clear Vision, Affordable Price.</h1>
-      <p class="lead">Find your perfect pair of spectacles without breaking the bank.</p>
-      <a routerLink="/products" class="btn btn-lg btn-outline">Shop Now</a>
+      <div class="hero-content">
+        <h1>City-quality spectacles from ₹499 — delivered to your door.</h1>
+        <p class="lead">No showroom markup, simple online ordering, 3-day city delivery.</p>
+        <div class="hero-cta">
+          <a routerLink="/products" class="btn btn-primary btn-lg">Shop Now – ₹499 Onwards</a>
+          <a href="https://wa.me/919004169765" class="btn btn-outline btn-lg" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp"></i> Chat with Us
+          </a>
+        </div>
+      </div>
+      <div class="hero-image">
+        <img src="https://images.unsplash.com/photo-1577803645773-f96470509666" alt="Happy customer wearing SastaChasma spectacles" loading="eager">
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Choose Us Section -->
+  <section class="benefits-section bg-light">
+    <div class="container">
+      <h2 class="section-title">Why Choose SastaChasma?</h2>
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <div class="benefit-icon">
+            <i class="fas fa-rupee-sign"></i>
+          </div>
+          <h3>Lowest Price Guarantee</h3>
+          <p>Best prices starting at just ₹499 with lenses included</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">
+            <i class="fas fa-glasses"></i>
+          </div>
+          <h3>Premium Lenses</h3>
+          <p>Anti-glare and scratch-resistant lenses included in all frames</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">
+            <i class="fas fa-truck"></i>
+          </div>
+          <h3>Fast Delivery</h3>
+          <p>2-3 days in major cities, 5-7 days across India</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">
+            <i class="fas fa-exchange-alt"></i>
+          </div>
+          <h3>Easy Returns</h3>
+          <p>7-day easy exchange policy for all orders</p>
+        </div>
+      </div>
     </div>
   </section>
 
   <!-- Featured Products Section -->
   <section class="featured-products py-5">
     <div class="container">
-      <h2 class="text-center mb-4">Featured Spectacles</h2>
+      <div class="section-header">
+        <h2 class="section-title">Our Bestselling Frames</h2>
+        <p class="section-subtitle">Trendy styles starting at just ₹499 with lenses</p>
+      </div>
+
       <div *ngIf="loading" class="flex-center">
         <div class="spinner"></div>
       </div>
-      <div *ngIf="!loading" class="grid grid-4">
+
+      <div *ngIf="!loading" class="products-grid">
         <app-product-card *ngFor="let product of featuredProducts" [product]="product" />
       </div>
-      <div class="text-center mt-4">
-        <a routerLink="/products" class="btn btn-secondary">View All Products</a>
+
+      <div class="text-center mt-5">
+        <a routerLink="/products" class="btn btn-primary">View All Frames</a>
       </div>
     </div>
   </section>
 
-  <!-- Value Proposition Section -->
-  <section class="value-proposition py-5 bg-light">
-    <div class="container grid grid-3 text-center">
-      <div class="card">
-        <h3 class="text-primary">Free Shipping</h3>
-        <p>On all orders above ₹500.</p>
+  <!-- How It Works Section -->
+  <section class="how-it-works bg-light">
+    <div class="container">
+      <h2 class="section-title text-center">How It Works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Choose Your Frame</h3>
+            <p>Browse our collection and select your favorite frame style and color</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Enter Your Prescription</h3>
+            <p>Upload your prescription or enter your power details during checkout</p>
+            <small class="text-muted">Need help reading your prescription? <a href="https://wa.me/91YOUR_NUMBER" target="_blank" rel="noopener">WhatsApp us</a></small>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Get Delivery in 3-5 Days</h3>
+            <p>We'll craft your glasses and deliver them to your doorstep</p>
+          </div>
+        </div>
       </div>
-      <div class="card">
-        <h3 class="text-primary">30-Day Returns</h3>
-        <p>Not satisfied? Return within 30 days for a full refund.</p>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="testimonials">
+    <div class="container">
+      <h2 class="section-title text-center">What Our Customers Say</h2>
+      <div class="testimonials-grid">
+        <div class="testimonial-card" *ngFor="let testimonial of testimonials">
+          <div class="testimonial-content">
+            <p>"{{testimonial.content}}"</p>
+          </div>
+          <div class="testimonial-author">
+            <div *ngIf="testimonial.imageUrl; else initialsTemplate">
+              <img [src]="testimonial.imageUrl" [alt]="testimonial.author" class="testimonial-avatar">
+            </div>
+            <ng-template #initialsTemplate>
+              <div class="initials-avatar" [ngStyle]="getInitialsStyle(testimonial.author)">
+                {{ getInitials(testimonial.author) }}
+              </div>
+            </ng-template>
+            <div>
+              <h4>{{testimonial.author.split(' ')[0]}} {{testimonial.author.split(' ')[1] ? testimonial.author.split(' ')[1].charAt(0) + '.' : ''}}</h4>
+              <span>{{testimonial.location}}</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="card">
-        <h3 class="text-primary">Best Price Guarantee</h3>
-        <p>We promise the most affordable prices for quality eyewear.</p>
+      <div class="text-center mt-4">
+        <a href="#" class="btn btn-outline">Read More Reviews</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="faq-section bg-light">
+    <div class="container">
+      <h2 class="section-title text-center">Frequently Asked Questions</h2>
+      <div class="faq-grid">
+        <div class="faq-item">
+          <h3>What if the power is wrong?</h3>
+          <p>We offer free power correction within 7 days of delivery. Just contact our support team and we'll help you get the right prescription.</p>
+        </div>
+        <div class="faq-item">
+          <h3>How long does delivery take?</h3>
+          <p>For metro cities: 2-3 business days. For other locations: 5-7 business days. We'll send you tracking details as soon as your order ships.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Do you offer returns?</h3>
+          <p>Yes! We offer 7-day easy returns on all orders. The product must be in original condition with all tags and packaging.</p>
+        </div>
+        <div class="faq-item">
+          <h3>What payment methods do you accept?</h3>
+          <p>We accept all major credit/debit cards, UPI, net banking, and Cash on Delivery (COD) for orders under ₹5000.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <h2>Ready to Find Your Perfect Pair?</h2>
+      <p>Join thousands of happy customers who trust us for affordable, high-quality eyewear.</p>
+      <div class="cta-buttons">
+        <a routerLink="/products" class="btn btn-primary btn-lg">Shop Now</a>
+        <a href="https://wa.me/91YOUR_NUMBER" class="btn btn-outline btn-lg" target="_blank" rel="noopener">
+          <i class="fab fa-whatsapp"></i> Chat with Us
+        </a>
       </div>
     </div>
   </section>
 </div>
+
+<!-- WhatsApp Floating Button -->
+<a href="https://wa.me/91YOUR_NUMBER" class="whatsapp-float" target="_blank" rel="noopener">
+  <i class="fab fa-whatsapp"></i>
+</a>
