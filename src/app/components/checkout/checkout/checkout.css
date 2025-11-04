@@ -25,6 +25,8 @@
 
 .payment-method input[type="radio"] {
   margin-right: 0.5rem;
+  width: 20px;
+  height: 20px;
 }
 
 .order-summary .card-body {
