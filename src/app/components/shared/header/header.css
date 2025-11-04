@@ -58,16 +58,22 @@
 .track-order-link i {
   font-size: 1.1rem;
 }
-  align-items: center;
-  justify-content: center;
-  margin: 0;
+.mobile-menu-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: none;
+  position: relative;
+  z-index: 101;
+  margin-right: 1rem;
 }
 
 .hamburger,
 .hamburger::before,
 .hamburger::after {
   display: block;
-  position: absolute;
+  position: relative;
   width: 24px;
   height: 2px;
   background-color: var(--text-primary);
@@ -78,15 +84,18 @@
 .hamburger::before,
 .hamburger::after {
   content: '';
+  position: absolute;
   left: 0;
 }
 
 .hamburger::before {
-  transform: translateY(-7px);
+  top: -7px;
+  width: 24px;
 }
 
 .hamburger::after {
-  transform: translateY(7px);
+  top: 7px;
+  width: 24px;
 }
 
 /* Active state for hamburger */
@@ -97,6 +106,61 @@
 .mobile-menu-toggle.active .hamburger::before {
   transform: rotate(45deg);
   top: 0;
+}
+
+.mobile-menu-toggle.active .hamburger::after {
+  transform: rotate(-45deg);
+  top: 0;
+}
+
+/* Show hamburger on mobile */
+@media (max-width: 768px) {
+  .mobile-menu-toggle {
+    display: block;
+  }
+  
+  .nav-menu {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 80%;
+    max-width: 300px;
+    height: 100vh;
+    background-color: var(--surface-color);
+    flex-direction: column;
+    padding: 5rem 1.5rem 2rem;
+    transition: left 0.3s ease;
+    z-index: 100;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .nav-menu.active {
+    left: 0;
+  }
+  
+  .nav-menu a {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+    width: 100%;
+  }
+  
+  .mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    z-index: 99;
+  }
+  
+  .mobile-menu-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
 }
 
 .mobile-menu-toggle.active .hamburger::after {
@@ -228,7 +292,7 @@
   }
 
   .nav-menu.active {
-    transform: translateX(100%);
+    /* transform: translateX(100%); */
   }
 
   .nav-menu a {
