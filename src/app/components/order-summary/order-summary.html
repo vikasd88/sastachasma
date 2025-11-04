@@ -1,0 +1,94 @@
+<div class="order-summary-container">
+  <div class="order-summary" *ngIf="!loading && orderDetails; else loadingOrError">
+    <div class="order-confirmation">
+      <div class="success-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+      <h1>Order Confirmed!</h1>
+      <p class="order-id">Order #{{ orderDetails.orderId }}</p>
+      <p class="confirmation-message">Thank you for your purchase. We've received your order and it's being processed.</p>
+      
+      <div class="delivery-info">
+        <h3>Estimated Delivery</h3>
+        <p class="delivery-date">{{ getEstimatedDeliveryDate() }}</p>
+      </div>
+    </div>
+
+    <div class="order-details">
+      <h2>Order Summary</h2>
+      <div class="order-items">
+        <div class="order-item" *ngFor="let item of orderDetails.items">
+          <img [src]="getProductImage(item.product)" [alt]="item.product.name" class="item-image">
+          <div class="item-details">
+            <h4>{{ item.product.name }}</h4>
+            <p class="item-specs">
+              <span *ngIf="getFrameSize(item)">Size: {{ getFrameSize(item) }} • </span>
+              <span>Qty: {{ item.quantity }}</span>
+            </p>
+            <p class="item-price">{{ formatPrice(item.product.price * item.quantity) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="order-totals">
+        <div class="total-row">
+          <span>Subtotal</span>
+          <span>{{ formatPrice(orderDetails.total) }}</span>
+        </div>
+        <div class="total-row">
+          <span>Shipping</span>
+          <span>FREE</span>
+        </div>
+        <div class="total-row grand-total">
+          <span>Total</span>
+          <span>{{ formatPrice(orderDetails.total) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="shipping-details">
+      <div class="shipping-address">
+        <h3>Shipping Address</h3>
+        <p>{{ orderDetails.shipping.fullName }}</p>
+        <p>{{ orderDetails.shipping.addressLine1 }}</p>
+        <p *ngIf="orderDetails.shipping.addressLine2">{{ orderDetails.shipping.addressLine2 }}</p>
+        <p>{{ orderDetails.shipping.city }}, {{ orderDetails.shipping.state }} {{ orderDetails.shipping.zipCode }}</p>
+        <p>{{ orderDetails.shipping.country }}</p>
+      </div>
+      <div class="payment-method">
+        <h3>Payment Method</h3>
+        <p>{{ orderDetails.payment === 'cod' ? 'Cash on Delivery' : 'Online Payment' }}</p>
+      </div>
+    </div>
+
+    <div class="action-buttons">
+      <button (click)="continueShopping()" class="btn btn-primary">Continue Shopping</button>
+      <button (click)="router.navigate(['/'])" class="btn btn-outline">Track Order</button>
+    </div>
+  </div>
+
+  <ng-template #loadingOrError>
+    <div class="loading-error" *ngIf="error; else loadingTemplate">
+      <div class="error-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <h2>Order Not Found</h2>
+      <p>{{ error }}</p>
+      <button (click)="router.navigate(['/'])" class="btn btn-primary">Back to Home</button>
+    </div>
+
+    <ng-template #loadingTemplate>
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Loading your order details...</p>
+      </div>
+    </ng-template>
+  </ng-template>
+</div>

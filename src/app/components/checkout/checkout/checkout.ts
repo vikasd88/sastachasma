@@ -44,17 +44,30 @@ export class CheckoutComponent implements OnInit {
       return;
     }
 
-    // Dummy checkout logic
-    console.log('Placing order with details:', {
-      items: this.cartItems,
+    // Generate a random order ID
+    const orderId = 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    
+    // Create order details
+    const orderDetails = {
+      orderId: orderId,
+      items: [...this.cartItems],
       total: this.cartTotal,
-      shipping: this.shippingAddress,
+      shipping: { ...this.shippingAddress },
       payment: this.paymentMethod,
-    });
+      orderDate: new Date()
+    };
 
-    alert('Order Placed Successfully! Thank you for shopping with us.');
+    // In a real app, you would send this to your backend
+    console.log('Placing order with details:', orderDetails);
+    
+    // Save order details to localStorage for the order summary page
+    localStorage.setItem('lastOrder', JSON.stringify(orderDetails));
+    
+    // Clear the cart
     this.cartService.clearCart();
-    this.router.navigate(['/']);
+    
+    // Navigate to order summary page
+    this.router.navigate(['/order-summary']);
   }
 
 }
