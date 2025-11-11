@@ -97,21 +97,42 @@ export class ApiService {
     );
   }
 
-  addToCart(userId: number, productId: number, quantity: number, lensId?: number): Observable<any> {
+  addToCart(userId: number, productId: number, quantity: number, lensId?: number, lensPrice?: any): Observable<any> {
     // Ensure we have a valid user ID
     const userIdValue = userId || environment.defaultUserId;
     
     // Create the request body
-    const body = { 
+    const body: any = { 
       productId,
       quantity,
-      lensId: lensId || null // Send null if lensId is not provided
+      lensId: lensId || null, // Send null if lensId is not provided
     };
+    
+    // Add lensPrice to the request body if provided
+    if (lensPrice !== undefined && lensPrice !== null) {
+      // Convert lensPrice to a number if it's a string or object
+      let priceValue: number;
+      if (typeof lensPrice === 'string') {
+        priceValue = parseFloat(lensPrice);
+      } else if (typeof lensPrice === 'object' && lensPrice !== null) {
+        priceValue = parseFloat(lensPrice.toString());
+      } else {
+        priceValue = Number(lensPrice);
+      }
+      
+      // Only add lensPrice if it's a valid number
+      if (!isNaN(priceValue)) {
+        body.lensPrice = priceValue;
+      } else {
+        console.warn('Invalid lensPrice value:', lensPrice);
+      }
+    }
     
     console.log('Sending addToCart request:', {
       url: `${this.apiUrl}/cart/items`,
       userId: userIdValue,
-      body
+      body,
+      headers: this.getCartHeaders(userIdValue)
     });
     
     return this.http.post(

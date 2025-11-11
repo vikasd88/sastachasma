@@ -31,15 +31,16 @@
             <img [src]="item.product.image || 'assets/placeholder-product.jpg'" [alt]="item.product.name" class="product-image">
             <div class="product-details">
               <h3 class="product-name">{{ item.product.name }}</h3>
-              <p class="lens-info" *ngIf="item.lens">Lens: {{ item.lens.name }}</p>
-              <p class="price-at-addition">Price: ₹{{ item.priceAtAddition.toFixed(2) }}</p>
+              <p class="price-at-addition">Frame: ₹{{ item.priceAtAddition.toFixed(2) }}</p>
+              <p class="lens-price" *ngIf="item.lensPrice && item.lensPrice > 0">Lens: ₹{{ item.lensPrice.toFixed(2) }}</p>
+              <p class="price-per-unit">Price per unit: ₹{{ (item.priceAtAddition + (item.lensPrice || 0)).toFixed(2) }}</p>
             </div>
           </div>
           <div class="lens-detail">
-            <span *ngIf="item.lens">{{ item.lens.name }}</span>
-            <span *ngIf="!item.lens">Standard</span>
+            <span *ngIf="item.lensPrice && item.lensPrice > 0">Custom Lens (₹{{ item.lensPrice.toFixed(2) }})</span>
+            <span *ngIf="!item.lensPrice || item.lensPrice === 0">Standard (₹0.00)</span>
           </div>
-          <div class="item-price">₹{{ item.priceAtAddition.toFixed(2) }}</div>
+          <div class="item-price">₹{{ (item.priceAtAddition + (item.lensPrice || 0)).toFixed(2) }}</div>
           <div class="quantity-control">
             <input type="number" [(ngModel)]="item.quantity" (change)="updateQuantity(item, item.quantity)" min="1" class="qty-input">
             <button (click)="removeItem(item)" class="remove-btn">Remove</button>

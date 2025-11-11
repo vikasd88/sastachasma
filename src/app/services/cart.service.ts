@@ -42,7 +42,8 @@ export class CartService {
       environment.defaultUserId,
       item.productId,
       item.quantity,
-      item.lensId
+      item.lensId,
+      item.lensPrice
     ).pipe(
       tap((response: any) => {
         try {
@@ -79,37 +80,54 @@ export class CartService {
   private mapToCartItems(backendItems: any[]): CartItem[] {
     if (!Array.isArray(backendItems)) return [];
     
-    return backendItems.map(item => ({
-      id: item.id,
-      product: {
-        id: item.productId,
-        name: item.productName,
-        price: item.priceAtAddition,
-        // Add default values for required product properties
-        brand: '',
-        originalPrice: item.priceAtAddition,
-        discount: 0,
-        rating: item.productRating || 0,
-        reviews: 0,
-        // Use item.imageUrl if available, otherwise use a default image
-        image: item.imageUrl || 'assets/placeholder-product.jpg',
-        imageUrl: item.imageUrl || 'assets/placeholder-product.jpg',
-        description: item.description || '',
-        shape: '',
-        frameMaterial: '',
-        material: '',
-        lensType: '',
-        color: item.color || '',
-        frameSize: '',
-        inStock: true
-      },
-      quantity: item.quantity,
-      priceAtAddition: item.priceAtAddition,
-      totalPrice: item.totalPrice,
-      productName: item.productName,
-      productRating: item.productRating
-    }));
+    return backendItems.map(item => {
+      // Convert prices to numbers to ensure consistency
+      const productPrice = Number(item.priceAtAddition) || 0;
+      const lensPrice = item.lensPrice ? Number(item.lensPrice) : 0;
+      const totalPrice = (productPrice + lensPrice) * (Number(item.quantity) || 1);
+      
+      console.log('Mapping cart item:', { 
+        item, 
+        productPrice, 
+        lensPrice, 
+        calculatedTotal: totalPrice,
+        quantity: item.quantity
+      });
+      
+      return {
+        id: item.id,
+        product: {
+          id: item.productId,
+          name: item.productName || 'Unknown Product',
+          price: productPrice,
+          // Add default values for required product properties
+          brand: '',
+          originalPrice: productPrice,
+          discount: 0,
+          rating: item.productRating || 0,
+          reviews: 0,
+          // Use item.imageUrl if available, otherwise use a default image
+          image: item.imageUrl || 'assets/placeholder-product.jpg',
+          imageUrl: item.imageUrl || 'assets/placeholder-product.jpg',
+          description: item.description || '',
+          shape: '',
+          frameMaterial: '',
+          material: '',
+          lensType: '',
+          color: item.color || '',
+          frameSize: '',
+          inStock: true
+        },
+        quantity: Number(item.quantity) || 1,
+        priceAtAddition: productPrice,
+        lensPrice: lensPrice,
+        totalPrice: totalPrice,
+        productName: item.productName || 'Unknown Product',
+        productRating: item.productRating || 0
+      };
+    });
   }
+  
 
   // Load cart from API
   loadCart(): void {
@@ -186,7 +204,10 @@ export class CartService {
     };
   }
 
-  // Get cart total
+  /**
+   * Calculate the total price of all items in the cart
+   * @returns The total price including frame and lens prices
+   */
   getCartTotal(): number {
     if (!this.cartItems || this.cartItems.length === 0) {
       return 0;
@@ -198,8 +219,8 @@ export class CartService {
         return total;
       }
       
-      const productPrice = item.product?.price || 0;
-      const lensPrice = item.lens?.price || 0;
+      const productPrice = item.priceAtAddition || 0;
+      const lensPrice = item.lensPrice || 0;
       const itemPrice = productPrice + lensPrice;
       const itemTotal = itemPrice * (item.quantity || 1);
       

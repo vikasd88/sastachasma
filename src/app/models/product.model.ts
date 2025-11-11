@@ -34,6 +34,7 @@ export interface CartItem {
   lens?: Lens;
   quantity: number;
   priceAtAddition: number;
+  lensPrice?: number; // Add lensPrice to the interface
   totalPrice: number;
   productName: string;
   productRating?: number | null;

@@ -29,8 +29,55 @@
   height: 20px;
 }
 
-.order-summary .card-body {
-  padding: 1.5rem;
+.order-summary {
+  position: sticky;
+  top: 2rem;
+}
+
+.order-item {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.order-item:last-child {
+  margin-bottom: 0;
+  border-bottom: 1px solid #eee;
+}
+
+.order-item .product-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.order-item .lens-detail {
+  margin: 0.5rem 0;
+  padding-left: 0.5rem;
+  border-left: 2px solid #ddd;
+}
+
+.order-item .lens-detail .text-muted {
+  color: #666 !important;
+  font-size: 0.9rem;
+}
+
+.order-item .product-price {
+  font-weight: 600;
+  color: #333;
+}
+
+.order-item .border-top {
+  border-top: 1px dashed #ddd;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+}
+
+/* Make the item total stand out */
+.order-item .border-top strong {
+  color: #2c3e50;
+  font-size: 1.05em;
 }
 
 .order-summary .border-top {

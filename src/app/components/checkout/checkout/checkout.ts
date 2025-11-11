@@ -37,7 +37,12 @@ export class CheckoutComponent implements OnInit {
   ngOnInit(): void {
     this.cartService.cart$.subscribe(items => {
       this.cartItems = items;
-      this.cartTotal = this.cartService.getCartTotal();
+      // Recalculate the total whenever cart items change
+      this.cartTotal = this.cartItems.reduce((total, item) => {
+        const itemPrice = (item.priceAtAddition || 0) + (item.lensPrice || 0);
+        return total + (itemPrice * (item.quantity || 1));
+      }, 0);
+      
       if (this.cartItems.length === 0) {
         this.router.navigate(['/cart']);
       }
@@ -62,10 +67,11 @@ export class CheckoutComponent implements OnInit {
       const orderItems = this.cartItems.map(item => ({
         productId: item.product.id,
         name: item.product.name,
-        price: item.product.price + (item.lens?.price || 0),
+        price: item.priceAtAddition,
+        lensPrice: item.lensPrice || 0,
         quantity: item.quantity,
         imageUrl: item.product.imageUrl || 'assets/placeholder-product.jpg',
-        lensName: item.lens?.name,  // Fixed: Changed from item.lenses to item.lens
+        lensName: item.lensPrice && item.lensPrice > 0 ? 'Custom Lens' : 'Standard',
         frameSize: item.frameSize
       }));
 

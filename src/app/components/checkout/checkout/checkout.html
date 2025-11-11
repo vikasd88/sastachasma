@@ -64,9 +64,21 @@
       <section class="order-summary card">
         <h3 class="card-header">3. Order Summary</h3>
         <div class="card-body">
-          <div *ngFor="let item of cartItems" class="flex-between mb-1">
-            <span>{{ item.product.name }} <span *ngIf="item.lens">({{ item.lens.type }})</span> x {{ item.quantity }}</span>
-            <span>₹{{ (item.product.price + (item.lens?.price || 0)) * item.quantity }}</span>
+          <div *ngFor="let item of cartItems" class="order-item mb-3">
+            <div class="flex-between mb-1">
+              <span class="product-name">{{ item.product.name }} x {{ item.quantity }}</span>
+              <span class="product-price">₹{{ (item.priceAtAddition * item.quantity).toFixed(2) }}</span>
+            </div>
+            <div *ngIf="item.lensPrice && item.lensPrice > 0" class="lens-detail mb-1">
+              <div class="flex-between">
+                <span class="text-muted">• Custom Lens x {{ item.quantity }}</span>
+                <span class="text-muted">₹{{ (item.lensPrice * item.quantity).toFixed(2) }}</span>
+              </div>
+            </div>
+            <div class="flex-between border-top pt-1">
+              <strong>Item Total</strong>
+              <strong>₹{{ ((item.priceAtAddition + (item.lensPrice || 0)) * item.quantity).toFixed(2) }}</strong>
+            </div>
           </div>
           <div class="flex-between mt-3 pt-3 border-top">
             <span>Subtotal:</span>

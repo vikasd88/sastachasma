@@ -113,22 +113,24 @@ export class CartComponent implements OnInit, OnDestroy {
     }
   }
 
-  getLensPrice(item: CartItem): number {
-    if (!item?.lens) return 0;
-    return item.lens.price || 0;
+  /**
+   * Calculate the total price for a single cart item
+   * @param item The cart item
+   * @returns The total price for the item (price + lens price) * quantity
+   */
+  getItemTotal(item: CartItem): number {
+    if (!item) return 0;
+    const itemPrice = (item.priceAtAddition || 0) + (item.lensPrice || 0);
+    return itemPrice * (item.quantity || 1);
   }
 
+  /**
+   * Calculate the total price for all items in the cart
+   */
   calculateTotal(): number {
-    return this.cartItems.reduce((total: number, item: CartItem) => {
-      const itemPrice = (item.priceAtAddition || 0) + this.getLensPrice(item);
-      return total + (itemPrice * (item.quantity || 0));
+    return this.cartItems.reduce((total, item) => {
+      return total + this.getItemTotal(item);
     }, 0);
-  }
-
-  getItemTotal(item: CartItem): string {
-    if (!item?.product) return '0.00';
-    const itemPrice = (item.priceAtAddition || 0) + this.getLensPrice(item);
-    return (itemPrice * (item.quantity || 0)).toFixed(2);
   }
 
   ngOnDestroy(): void {

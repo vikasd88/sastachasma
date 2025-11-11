@@ -65,12 +65,17 @@ export class LensCustomizationComponent implements OnInit {
   }
 
   addToCart(): void {
-    if (this.product) {
-      const addToCartRequest: AddToCartRequest = {
+    if (this.product && this.selectedLens) {
+      // Create the request object with lensPrice as a string to ensure proper BigDecimal conversion
+      const addToCartRequest = {
         productId: this.product.id,
         quantity: this.quantity,
         lensId: this.selectedLensId || undefined,
-      };
+        lensPrice: this.selectedLens.price.toString() // Convert to string for proper BigDecimal conversion
+      } as AddToCartRequest;
+      
+      console.log('Sending addToCart request:', addToCartRequest); // Debug log
+      
       this.cartService.addToCart(addToCartRequest).subscribe({
         next: () => this.router.navigate(['/cart']),
         error: (error: any) => {
