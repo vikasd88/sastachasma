@@ -2,7 +2,7 @@
   <!-- Show server order details if available, otherwise show local order details -->
   <div class="order-summary">
     <ng-container *ngIf="!loading; else loadingTemplate">
-      <div *ngIf="orderDetails || localOrderDetails; else errorTemplate">
+      <div *ngIf="activeOrderDetails; else errorTemplate">
         <div class="order-confirmation">
           <div class="success-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -11,7 +11,7 @@
             </svg>
           </div>
           <h1>Order Confirmed!</h1>
-          <p class="order-id">Order #{{ orderDetails?.orderId || localOrderDetails?.orderId }}</p>
+          <p class="order-id">Order #{{ activeOrderDetails.orderId }}</p>
           <p class="confirmation-message">Thank you for your purchase. We've received your order and it's being processed.</p>
           
           <div class="delivery-info">
@@ -23,32 +23,37 @@
         <div class="order-details">
           <h2>Order Summary</h2>
           <div class="order-items">
-            <div class="order-item" *ngFor="let item of (orderDetails?.items || localOrderDetails?.items || [])">
-              <img [src]="getProductImage(item)" [alt]="item.name" class="item-image">
+            <div class="order-item" *ngFor="let item of activeOrderDetails.items">
+              <div class="item-image-container">
+                <img [src]="getProductImage(item)" [alt]="item.name" class="item-image" (error)="$event.target.src=getProductImage(null)">
+                <span class="item-quantity" *ngIf="item.quantity > 1">{{ item.quantity }}</span>
+              </div>
               <div class="item-details">
-                <h4>{{ item.name }} <span class="quantity">x{{ item.quantity }}</span></h4>
+                <h4>{{ item.name || 'Unknown Product' }}</h4>
                 
                 <!-- Frame Size (if available) -->
-                <div *ngIf="item.frameSize" class="frame-size">
-                  <span>Frame Size: {{ item.frameSize }}</span>
+                <div *ngIf="item.frameSize || getFrameSize(item)" class="frame-size">
+                  <span>Frame Size: {{ item.frameSize || getFrameSize(item) || 'N/A' }}</span>
                 </div>
                 
                 <!-- Frame Price -->
-                <div class="price-row">
-                  <span>Frame ({{ item.quantity }}x {{ formatPrice(item.price) }})</span>
-                  <span>{{ formatPrice(item.price * item.quantity) }}</span>
-                </div>
-                
-                <!-- Lens Price (if applicable) -->
-                <div *ngIf="item.lensPrice && item.lensPrice > 0" class="price-row lens-price">
-                  <span>{{ item.lensName || 'Custom Lens' }} ({{ item.quantity }}x {{ formatPrice(item.lensPrice) }})</span>
-                  <span>+ {{ formatPrice(item.lensPrice * item.quantity) }}</span>
-                </div>
-                
-                <!-- Item Total -->
-                <div class="price-row item-total">
-                  <strong>Item Total</strong>
-                  <strong>{{ formatPrice((item.price + (item.lensPrice || 0)) * item.quantity) }}</strong>
+                <div class="price-details">
+                  <div class="price-row">
+                    <span class="price-label">Frame ({{ item.quantity }} × {{ formatPrice(item.price || 0) }})</span>
+                    <span class="price-amount">{{ formatPrice((item.price || 0) * item.quantity) }}</span>
+                  </div>
+                  
+                 <!-- Lens Price (if applicable) -->
+                  <div *ngIf="item.lensPrice && item.lensPrice > 0" class="price-row">
+                    <span class="price-label">{{ item.lensName || 'Custom Lens' }} ({{ item.quantity }} × {{ formatPrice(item.lensPrice) }})</span>
+                    <span class="price-amount">+ {{ formatPrice((item.lensPrice || 0) * (item.quantity || 1)) }}</span>
+                  </div>
+                  
+                  <!-- Item Total -->
+                  <div class="price-row item-total">
+                    <strong>Item Total</strong>
+                    <strong>{{ formatPrice(((item.price || 0) * item.quantity) + ((item.lensPrice || 0) * (item.quantity || 1))) }}</strong>
+                  </div>
                 </div>
               </div>
             </div>
@@ -56,41 +61,44 @@
 
           <div class="order-totals">
             <div class="total-row">
-              <span>Subtotal</span>
-              <span>{{ formatPrice(orderDetails?.total || localOrderDetails?.total || 0) }}</span>
+              <span>Subtotal ({{ activeOrderDetails.items.length || 0 }} items)</span>
+              <span>{{ formatPrice(calculateOrderSubtotal()) }}</span>
             </div>
             <div class="total-row">
               <span>Shipping</span>
               <span>FREE</span>
             </div>
             <div class="total-row grand-total">
-              <span>Total</span>
-              <span>{{ formatPrice(orderDetails?.total || localOrderDetails?.total || 0) }}</span>
+              <span>Total Amount</span>
+              <span>{{ formatPrice(activeOrderDetails.total) }}</span>
             </div>
           </div>
-        </div>
 
-        <div class="shipping-details">
-          <div class="shipping-address">
-            <h3>Shipping Address</h3>
-            <p>{{ (orderDetails?.shippingAddress?.name || localOrderDetails?.shippingAddress?.name || '') }}</p>
-            <p>{{ (orderDetails?.shippingAddress?.street || localOrderDetails?.shippingAddress?.street || localOrderDetails?.shippingAddress?.addressLine1 || '') }}</p>
-            <p>
-              {{ (orderDetails?.shippingAddress?.city || localOrderDetails?.shippingAddress?.city || '') }}, 
-              {{ (orderDetails?.shippingAddress?.state || localOrderDetails?.shippingAddress?.state || '') }}
-            </p>
-            <p>Pincode: {{ (orderDetails?.shippingAddress?.pincode || localOrderDetails?.shippingAddress?.pincode || localOrderDetails?.shippingAddress?.zipCode || '') }}</p>
-            <p>Phone: {{ orderDetails?.shippingAddress?.phone || '' }}</p>
+          <div class="shipping-details">
+            <div class="shipping-address">
+              <h3>Shipping Address</h3>
+              <p>{{ activeOrderDetails.shippingAddress.name }}</p>
+              <p>{{ activeOrderDetails.shippingAddress.street }}</p>
+              <p *ngIf="activeOrderDetails.shippingAddress.addressLine1 && activeOrderDetails.shippingAddress.addressLine1 !== activeOrderDetails.shippingAddress.street">{{ activeOrderDetails.shippingAddress.addressLine1 }}</p>
+              <p *ngIf="activeOrderDetails.shippingAddress.addressLine2">{{ activeOrderDetails.shippingAddress.addressLine2 }}</p>
+              <p>{{ activeOrderDetails.shippingAddress.city }}, {{ activeOrderDetails.shippingAddress.state }} {{ activeOrderDetails.shippingAddress.pincode }}</p>
+              <p *ngIf="activeOrderDetails.shippingAddress.country">{{ activeOrderDetails.shippingAddress.country }}</p>
+              <p *ngIf="activeOrderDetails.shippingAddress.phone">Phone: {{ activeOrderDetails.shippingAddress.phone }}</p>
+            </div>
+            <div class="payment-method">
+              <h3>Payment Information</h3>
+              <p>Method: {{ getPaymentMethod() }}</p>
+              <p>Status: {{ activeOrderDetails.payment.status }}</p>
+              <p *ngIf="activeOrderDetails.payment?.transactionId">
+                Transaction ID: {{ activeOrderDetails.payment.transactionId || 'N/A' }}
+              </p>
+            </div>
           </div>
-          <div class="payment-method">
-            <h3>Payment Method</h3>
-            <p>{{ getPaymentMethod() }}</p>
-          </div>
-        </div>
 
-        <div class="action-buttons">
-          <button (click)="continueShopping()" class="btn btn-primary">Continue Shopping</button>
-          <button (click)="trackOrder()" class="btn btn-outline">Track Order</button>
+          <div class="action-buttons">
+            <button (click)="continueShopping()" class="btn btn-primary">Continue Shopping</button>
+            <button (click)="trackOrder()" class="btn btn-outline">Track Order</button>
+          </div>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import { CartItem, Product } from '../models/product.model';
 
-export type OrderStatusType = 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatusType = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
 export type PaymentStatusType = 'pending' | 'completed' | 'failed' | 'refunded';
 
 export interface OrderStatus {
@@ -14,11 +14,11 @@ export interface OrderStatus {
 // For TrackOrderComponent, OrderItem needs direct properties
 export interface OrderItem {
   productId: number;
-  name: string;
+  name: string; // Reverted to name
   quantity: number;
-  price: number;
+  price: number; // Use price as unit price
   imageUrl?: string;
-  lensId?: number;
+  lensId?: string | null;
   lensName?: string;
   lensPrice?: number;
   frameSize?: string | number | null;
@@ -33,7 +33,7 @@ export interface ShippingAddress {
   state: string;
   pincode: string;
   zipCode?: string;
-  phone: string;
+  phone?: string;
   country?: string;
 }
 
@@ -56,6 +56,7 @@ export interface OrderDetails {
   customerName: string;
   orderDate: Date;
   estimatedDelivery?: Date;
+  status: OrderStatusType;
   items: OrderItem[]; // Changed to OrderItem[]
   statusHistory: OrderStatus[];
   shippingAddress: ShippingAddress;
@@ -63,4 +64,32 @@ export interface OrderDetails {
   total: number;
   shippingMethod?: ShippingMethod;
   discount?: number;
+}
+
+export interface OrderRequest {
+  customerName: string;
+  orderDate: string;
+  estimatedDelivery: string;
+  items: Array<{
+    productId: number;
+    name: string;
+    price: number;
+    quantity: number;
+    imageUrl: string;
+    lensId: string | null;
+    lensName: string;
+    lensPrice: number;
+    frameSize: string;
+  }>;
+  shippingAddress: {
+    name: string;
+    street: string;
+    city: string;
+    state: string;
+    pincode: string;
+    phone: string;
+    country: string;
+  };
+  payment: PaymentDetails;
+  userId: number;
 }

@@ -3,30 +3,20 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CartItem } from '../../models/product.model';
 import { OrderService } from '../../services/order.service';
-import { firstValueFrom } from 'rxjs';
-import { OrderDetails as ModelOrderDetails, OrderItem, ShippingAddress as ModelShippingAddress } from '../../models/order.model';
+import { catchError, firstValueFrom, of } from 'rxjs';
+import { OrderDetails as ModelOrderDetails, OrderItem, ShippingAddress as ModelShippingAddress, PaymentDetails, PaymentStatusType } from '../../models/order.model';
 
 // Local interfaces for the component
 interface LocalOrderItem extends OrderItem {
-  frameSize?: string;
-  product?: {
-    name: string;
-    price: number;
-    imageUrl?: string;
-  };
+  totalPrice: number;
 }
 
 interface LocalOrderDetails {
   orderId: string;
   items: LocalOrderItem[];
   total: number;
-  shippingAddress: ModelShippingAddress & {
-    zipCode?: string;
-    country?: string;
-    addressLine1?: string;
-    addressLine2?: string;
-  };
-  payment: string;
+  shippingAddress: ModelShippingAddress;
+  payment: PaymentDetails; // Changed to PaymentDetails
   orderDate: string;
 }
 
@@ -39,10 +29,14 @@ interface LocalOrderDetails {
 })
 export class OrderSummaryComponent implements OnInit {
   orderDetails: ModelOrderDetails | null = null;
-  localOrderDetails: LocalOrderDetails | null = null;
   loading: boolean = true;
   error: string | null = null;
   orderId: string | null = null;
+  localOrderDetails: LocalOrderDetails | null = null;
+
+  get activeOrderDetails(): ModelOrderDetails | LocalOrderDetails | null {
+    return this.orderDetails || this.localOrderDetails;
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -51,60 +45,43 @@ export class OrderSummaryComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    console.log('OrderSummaryComponent initialized');
-    
     // First check for order data in navigation state
     const navigation = this.router.getCurrentNavigation();
-    const state = navigation?.extras.state as { order: any };
+    const state = navigation?.extras?.state as { order: any };
     
-    console.log('Navigation state:', state);
+    // Extract order ID from URL
+    const urlSegments = this.router.url.split('/');
+    this.orderId = urlSegments[urlSegments.length - 1];
     
     if (state?.order) {
-      console.log('Using order from navigation state:', state.order);
       // If we have order data in the state, use it directly
       this.localOrderDetails = this.mapToLocalOrderDetails(state.order);
-      console.log('Mapped order details:', this.localOrderDetails);
       this.loading = false;
       // Also save to local storage for future reference
-      localStorage.setItem('lastOrder', JSON.stringify(this.localOrderDetails));
-    } else {
-      console.log('No order in navigation state, checking URL params');
-      // Check local storage first for immediate feedback
-      const lastOrder = localStorage.getItem('lastOrder');
-      if (lastOrder) {
-        try {
-          this.localOrderDetails = JSON.parse(lastOrder);
-          console.log('Loaded order from localStorage:', this.localOrderDetails);
-          this.loading = false;
-        } catch (e) {
-          console.error('Error parsing order from localStorage:', e);
-        }
+      if (this.localOrderDetails) {
+        localStorage.setItem('lastOrder', JSON.stringify(this.localOrderDetails));
       }
       
-      // Then check URL parameters
-      this.route.paramMap.subscribe(params => {
-        this.orderId = params.get('id');
-        console.log('Order ID from URL:', this.orderId);
-        if (this.orderId) {
-          this.loadOrderDetails();
-        } else {
-          console.warn('No order ID in URL and no order in state');
-          this.error = 'No order details found. Please check your order confirmation email.';
-          this.loading = false;
-        }
-      });
+      // Try to load from local storage first
+      this.tryLoadFromLocalStorage();
+      
+      // Then try to load from URL if we have an order ID
+      if (this.orderId) { // Check if orderId exists before loading
+        this.loadOrderDetails();
+      } else {
+        this.loading = false;
+        this.error = 'No order ID provided';
+      }
     }
     
     // Fallback: Check for order data in local storage after a short delay
     setTimeout(() => {
       if ((!this.orderDetails && !this.localOrderDetails) || this.loading) {
-        console.log('Falling back to local storage check');
         const lastOrder = localStorage.getItem('lastOrder');
         if (lastOrder) {
           try {
             this.localOrderDetails = JSON.parse(lastOrder);
             this.loading = false;
-            console.log('Loaded order from local storage:', this.localOrderDetails);
           } catch (e) {
             console.error('Error parsing order from localStorage:', e);
           }
@@ -113,136 +90,267 @@ export class OrderSummaryComponent implements OnInit {
     }, 500);
   }
 
-  async loadOrderDetails(): Promise<void> {
-    try {
-      this.loading = true;
-      this.error = null;
-      
-      console.log('Loading order details for ID:', this.orderId);
-      
-      // If we have an order ID, try to fetch the latest order details from the server first
-      if (this.orderId) {
-        try {
-          console.log('Fetching order details from server...');
-          const order = await firstValueFrom(this.orderService.getOrderDetails(this.orderId));
-          console.log('Order details from server:', order);
-          
-          if (order) {
-            this.orderDetails = order;
-            this.localOrderDetails = this.mapToLocalOrderDetails(order);
-            console.log('Mapped order details:', this.localOrderDetails);
-            
-            // Update local storage with the latest order details
-            localStorage.setItem('lastOrder', JSON.stringify(this.localOrderDetails));
-            this.loading = false;
-            return;
-          }
-        } catch (error) {
-          console.error('Error fetching order from server:', error);
-          // If server fetch fails, fall back to local storage
-        }
-      }
-      
-      // Fallback to local storage if server fetch fails or no order ID
-      console.log('Falling back to local storage');
-      const lastOrder = localStorage.getItem('lastOrder');
-      if (lastOrder) {
-        try {
-          const parsedOrder = JSON.parse(lastOrder) as LocalOrderDetails;
-          // If we have an order ID, verify it matches the stored order
-          if (!this.orderId || (parsedOrder.orderId === this.orderId)) {
-            this.localOrderDetails = parsedOrder;
-            console.log('Loaded order from localStorage:', this.localOrderDetails);
+  private tryLoadFromLocalStorage(): void {
+    const lastOrder = localStorage.getItem('lastOrder');
+    if (lastOrder) {
+      try {
+        const parsedOrder = JSON.parse(lastOrder);
+        // Only use local storage if we don't have an order ID or if it matches
+        if (!this.orderId || parsedOrder.orderId === this.orderId) {
+          // Ensure payment is correctly typed as PaymentDetails when loading from local storage
+          let paymentMethod: string;
+          let paymentStatus: PaymentStatusType;
+          let paymentAmount: number = parsedOrder.total || 0;
+          let paymentTransactionId: string | undefined = undefined;
+          let paymentDate: Date | undefined = undefined;
+
+          if (typeof parsedOrder.payment === 'string') {
+            paymentMethod = parsedOrder.payment;
+            paymentStatus = (parsedOrder.payment.toLowerCase() === 'cod' ? 'pending' : 'completed');
+          } else if (parsedOrder.payment) {
+            paymentMethod = parsedOrder.payment.method || 'cod';
+            paymentStatus = parsedOrder.payment.status || 'pending';
+            paymentAmount = Number(parsedOrder.payment.amount) || paymentAmount;
+            paymentTransactionId = parsedOrder.payment.transactionId || paymentTransactionId;
+            paymentDate = parsedOrder.payment.paymentDate ? new Date(parsedOrder.payment.paymentDate) : paymentDate;
           } else {
-            console.warn('Order ID in URL does not match stored order');
-            this.error = 'Order not found. Please check your order confirmation email.';
+            paymentMethod = 'cod';
+            paymentStatus = 'pending' as PaymentStatusType;
           }
-        } catch (e) {
-          console.error('Error parsing order from localStorage:', e);
-          this.error = 'Error loading order details. Please contact support.';
+
+          const finalPaymentDetails: PaymentDetails = {
+            method: paymentMethod,
+            status: paymentStatus,
+            amount: paymentAmount,
+            transactionId: paymentTransactionId,
+            paymentDate: paymentDate,
+          };
+
+          const correctedLocalOrderDetails: LocalOrderDetails = {
+            orderId: parsedOrder.orderId,
+            items: parsedOrder.items,
+            total: parsedOrder.total,
+            shippingAddress: parsedOrder.shippingAddress,
+            payment: finalPaymentDetails, // Assign the explicitly constructed PaymentDetails
+            orderDate: parsedOrder.orderDate,
+          };
+
+          this.localOrderDetails = correctedLocalOrderDetails;
+          this.loading = false;
         }
-      } else {
-        this.error = 'No order details found. Please check your order confirmation email.';
+      } catch (e) {
+        console.error('Error parsing order from localStorage:', e);
       }
+    }
+  }
+  
+  async loadOrderDetails(): Promise<void> {
+    this.loading = true;
+    this.error = null;
+    
+    if (!this.orderId) {
+      this.error = 'No order ID provided';
+      this.loading = false;
+      return;
+    }
+    
+    // First try to load from local storage for immediate display
+    this.tryLoadFromLocalStorage();
+    
+    // Then try to fetch from server in the background
+    try {
+      const order = await firstValueFrom(
+        this.orderService.getOrderDetails(this.orderId).pipe(
+          catchError(error => {
+            if (error.status === 404) {
+            } else {
+            }
+            return of(null);
+          })
+        )
+      );
+      
+      if (order) {
+        this.orderDetails = order;
+        this.localOrderDetails = this.mapToLocalOrderDetails(order);
+        
+        // Update local storage with the latest order details
+        if (this.localOrderDetails) {
+          localStorage.setItem('lastOrder', JSON.stringify(this.localOrderDetails));
+        }
+      }
+      
     } catch (error) {
-      console.error('Error loading order details:', error);
-      this.error = 'An unexpected error occurred while loading order details.';
+      // We'll continue with local data if available
     } finally {
+      // If we still don't have any order details, show an error
+      if (!this.localOrderDetails && !this.orderDetails) {
+        const lastOrder = localStorage.getItem('lastOrder');
+        if (lastOrder) {
+          try {
+            const parsedOrderFromLocalStorage = JSON.parse(lastOrder);
+
+            let paymentMethodFinal: string;
+            let paymentStatusFinal: PaymentStatusType;
+            let paymentAmountFinal: number = parsedOrderFromLocalStorage.total || 0;
+            let paymentTransactionIdFinal: string | undefined = undefined;
+            let paymentDateFinal: Date | undefined = undefined;
+
+            if (typeof parsedOrderFromLocalStorage.payment === 'string') {
+              paymentMethodFinal = parsedOrderFromLocalStorage.payment;
+              paymentStatusFinal = (parsedOrderFromLocalStorage.payment.toLowerCase() === 'cod' ? 'pending' : 'completed') as PaymentStatusType;
+            } else if (parsedOrderFromLocalStorage.payment) {
+              paymentMethodFinal = parsedOrderFromLocalStorage.payment.method || 'cod';
+              paymentStatusFinal = parsedOrderFromLocalStorage.payment.status || 'pending';
+              paymentAmountFinal = Number(parsedOrderFromLocalStorage.payment.amount) || paymentAmountFinal;
+              paymentTransactionIdFinal = parsedOrderFromLocalStorage.payment.transactionId || paymentTransactionIdFinal;
+              paymentDateFinal = parsedOrderFromLocalStorage.payment.paymentDate ? new Date(parsedOrderFromLocalStorage.payment.paymentDate) : paymentDateFinal;
+            } else {
+              paymentMethodFinal = 'cod';
+              paymentStatusFinal = 'pending' as PaymentStatusType;
+            }
+
+            const finalPaymentDetails: PaymentDetails = {
+              method: paymentMethodFinal,
+              status: paymentStatusFinal,
+              amount: paymentAmountFinal,
+              transactionId: paymentTransactionIdFinal,
+              paymentDate: paymentDateFinal,
+            };
+
+            const finalParsedOrder = parsedOrderFromLocalStorage as LocalOrderDetails;
+
+            const correctedLocalOrderDetails: LocalOrderDetails = {
+              orderId: finalParsedOrder.orderId,
+              items: finalParsedOrder.items,
+              total: finalParsedOrder.total,
+              shippingAddress: finalParsedOrder.shippingAddress,
+              payment: finalPaymentDetails,
+              orderDate: finalParsedOrder.orderDate,
+            };
+
+            // If we have an order ID, verify it matches the stored order
+            if (!this.orderId || (correctedLocalOrderDetails.orderId === this.orderId)) {
+              this.localOrderDetails = correctedLocalOrderDetails;
+            } else {
+              this.error = 'Order not found. Please check your order confirmation email.';
+            }
+          } catch (e) {
+            console.error('Error parsing order from localStorage in finally block:', e);
+            this.error = 'Error loading order details. Please contact support.';
+          }
+        } else {
+          this.error = 'No order details found. Please check your order confirmation email.';
+        }
+      }
       this.loading = false;
     }
   }
-    // End of previous block (try/catch/finally). No stray or unmatched closing braces.
-  
   private mapToLocalOrderDetails(order: any): LocalOrderDetails {
-    console.log('Mapping order to local details:', order);
+    
+    if (!order) {
+      return {
+        orderId: 'error-no-order-id',
+        items: [],
+        total: 0,
+        shippingAddress: {
+          name: '',
+          street: '',
+          city: '',
+          state: '',
+          pincode: '',
+          phone: ''
+        },
+        payment: {
+          method: 'cod',
+          status: 'pending' as PaymentStatusType,
+          amount: 0,
+        },
+        orderDate: new Date().toISOString()
+      };
+    }
     
     // Ensure items exist and are properly formatted
     const items = (order.items || []).map((item: any) => {
       // Ensure all required fields have default values
-      const mappedItem: any = {
-        ...item,
+      const mappedItem: LocalOrderItem = {
         productId: item.productId || 0,
-        name: item.name || 'Unknown Product',
-        price: Number(item.price) || 0,
-        quantity: Number(item.quantity) || 1,
+        name: item.name, // Use name directly, as mapped by service
+        price: item.price, // Use price directly, as mapped by service
         imageUrl: item.imageUrl || 'assets/placeholder-product.jpg',
-        lensPrice: Number(item.lensPrice) || 0,
+        lensId: item.lensId || null,
         lensName: item.lensName || (item.lensPrice > 0 ? 'Custom Lens' : undefined),
-        frameSize: item.frameSize || null
+        lensPrice: Number(item.lensPrice) || 0,
+        frameSize: item.frameSize || null,
+        quantity: Number(item.quantity) || 1,
+        totalPrice: 0 // Initialize totalPrice, will be calculated next
       };
       
       // Calculate total price for the item
-      mappedItem.totalPrice = (mappedItem.price + (mappedItem.lensPrice || 0)) * mappedItem.quantity;
+      mappedItem.totalPrice = (mappedItem.price + (mappedItem.lensPrice ?? 0)) * mappedItem.quantity;
       
       return mappedItem;
     });
     
     // Calculate total if not provided
-    const total = order.total || items.reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0);
+    const total = Number(order.totalAmount) || (order.total || 0) || items.reduce((sum: number, item: any) => sum + item.totalPrice, 0);
     
     // Format shipping address
-    const shippingAddress = {
-      name: order.shippingAddress?.name || 'N/A',
-      street: order.shippingAddress?.street || order.shippingAddress?.addressLine1 || 'N/A',
-      city: order.shippingAddress?.city || 'N/A',
-      state: order.shippingAddress?.state || 'N/A',
-      pincode: order.shippingAddress?.pincode || order.shippingAddress?.zipCode || 'N/A',
-      phone: order.shippingAddress?.phone || 'N/A',
-      country: order.shippingAddress?.country || 'India',
-      addressLine1: order.shippingAddress?.street || order.shippingAddress?.addressLine1 || 'N/A',
-      addressLine2: order.shippingAddress?.addressLine2 || ''
+    const shippingAddress = this.parseAddressString(order.shippingAddress || {});
+    
+    let finalPaymentMethod: string;
+    let finalPaymentStatus: PaymentStatusType;
+    let finalPaymentAmount: number = Number(order.totalAmount) || 0;
+    let finalPaymentTransactionId: string | undefined = undefined;
+    let finalPaymentDate: Date | undefined = undefined;
+
+    if (typeof order.payment === 'string') {
+      finalPaymentMethod = order.payment;
+      finalPaymentStatus = (order.payment.toLowerCase() === 'cod' ? 'pending' : 'completed') as PaymentStatusType;
+    } else if (order.payment) {
+      finalPaymentMethod = order.payment.method || 'cod';
+      finalPaymentStatus = order.payment.status || 'pending';
+      finalPaymentAmount = Number(order.payment.amount) || finalPaymentAmount;
+      finalPaymentTransactionId = order.payment.transactionId || finalPaymentTransactionId;
+      finalPaymentDate = order.payment.paymentDate ? new Date(order.payment.paymentDate) : finalPaymentDate;
+    } else {
+      finalPaymentMethod = order.paymentMethod || 'cod';
+      finalPaymentStatus = order.paymentStatus || (finalPaymentMethod.toLowerCase() === 'cod' ? 'pending' : 'completed') as PaymentStatusType;
+    }
+
+    const paymentDetails: PaymentDetails = {
+      method: finalPaymentMethod,
+      status: finalPaymentStatus,
+      amount: finalPaymentAmount,
+      transactionId: finalPaymentTransactionId,
+      paymentDate: finalPaymentDate,
     };
     
-    // Format payment method
-    const paymentMethod = order.payment?.method || 'cod';
-    
     // Format order date
-    let orderDate = new Date().toISOString();
-    if (order.orderDate) {
-      orderDate = typeof order.orderDate === 'string' 
-        ? order.orderDate 
-        : order.orderDate.toISOString ? order.orderDate.toISOString() : new Date(order.orderDate).toISOString();
-    }
+    let orderDate = order.orderDate ? new Date(order.orderDate).toISOString() : new Date().toISOString();
     
     const mappedOrder: LocalOrderDetails = {
-      orderId: order.orderId || `temp-${Date.now()}`,
+      orderId: order.orderId || order.orderNumber || `temp-${Date.now()}`,
       items,
       total,
       shippingAddress,
-      payment: paymentMethod,
+      payment: paymentDetails,
       orderDate
     };
     
-    console.log('Mapped order details:', mappedOrder);
     return mappedOrder;
   }
 
   // Helper method to get the product image URL
   getProductImage(item: any): string {
-    if (!item) return 'assets/placeholder-product.jpg';
-    if (item.imageUrl) return item.imageUrl;
-    if (item.image) return item.image;
-    return 'assets/placeholder-product.jpg';
+    // Check for image in various possible locations
+    if (item?.imageUrl) return item.imageUrl;
+    if (item?.image) return item.image;
+    if (item?.product?.imageUrl) return item.product.imageUrl;
+    if (item?.product?.image) return item.product.image;
+    
+    // Return a simple placeholder SVG as a fallback
+    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNEOEQ4RDgiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgo8cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIiByeT0iMiI+PC9yZWN0Pgo8Y2lyY2xlIGN4PSI4LjUiIGN5PSI4LjUiIHI9IjEuNSI+PC9jaXJjbGU+Cjxwb2x5bGluZSBwb2ludHM9IjIxIDE1IDE2IDEwIDUgMjEiPjwvcG9seWxpbmU+Cjwvc3ZnPg==';
   }
 
   // Format price to currency
@@ -254,6 +362,22 @@ export class OrderSummaryComponent implements OnInit {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount);
+  }
+
+  // Calculate item subtotal (frame + lens) * quantity
+  calculateItemSubtotal(item: any): number {
+    const framePrice = item.price || 0;
+    const lensPrice = item.lensPrice || 0;
+    const quantity = item.quantity || 1;
+    return (framePrice + lensPrice) * quantity;
+  }
+
+  // Calculate order subtotal (sum of all items)
+  calculateOrderSubtotal(): number {
+    const items = this.orderDetails?.items || this.localOrderDetails?.items || [];
+    return items.reduce((total: number, item: any) => {
+      return total + this.calculateItemSubtotal(item);
+    }, 0);
   }
 
   // Get estimated delivery date
@@ -274,7 +398,7 @@ export class OrderSummaryComponent implements OnInit {
 
   // Get payment method display text
   getPaymentMethod(): string {
-    const paymentMethod = this.orderDetails?.payment?.method || this.localOrderDetails?.payment || 'cod';
+    const paymentMethod = this.activeOrderDetails?.payment?.method || 'cod';
     switch (paymentMethod.toLowerCase()) {
       case 'cod': return 'Cash on Delivery';
       case 'card': return 'Credit/Debit Card';
@@ -297,10 +421,57 @@ export class OrderSummaryComponent implements OnInit {
     this.router.navigate(['/products']);
   }
   
-  
   // Helper method to get frame size if available
   getFrameSize(item: OrderItem | any): string | null {
     // Check if frameSize exists on the item or its product
     return item?.frameSize || item?.product?.frameSize || null;
+  }
+
+  private parseAddressString(address: string | any): ModelShippingAddress & {
+    zipCode?: string;
+    country?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+  } {
+    if (typeof address === 'string') {
+      try {
+        const parsedAddress = JSON.parse(address);
+        return {
+          name: parsedAddress.name || '',
+          street: parsedAddress.street || parsedAddress.addressLine1 || '',
+          city: parsedAddress.city || '',
+          state: parsedAddress.state || '',
+          pincode: parsedAddress.pincode || parsedAddress.zipCode || '',
+          phone: parsedAddress.phone || '',
+          country: parsedAddress.country || '',
+          addressLine1: parsedAddress.street || parsedAddress.addressLine1 || '',
+          addressLine2: parsedAddress.addressLine2 || ''
+        };
+      } catch (e) {
+        console.error('Error parsing address string:', e);
+        return {
+          name: 'N/A',
+          street: 'N/A',
+          city: 'N/A',
+          state: 'N/A',
+          pincode: 'N/A',
+          phone: 'N/A',
+          country: 'India',
+          addressLine1: 'N/A',
+          addressLine2: ''
+        };
+      }
+    }
+    return {
+      name: address?.name || '',
+      street: address?.street || address?.addressLine1 || '',
+      city: address?.city || '',
+      state: address?.state || '',
+      pincode: address?.pincode || address?.zipCode || '',
+      phone: address?.phone || '',
+      country: address?.country || '',
+      addressLine1: address?.street || address?.addressLine1 || '',
+      addressLine2: address?.addressLine2 || ''
+    };
   }
 }

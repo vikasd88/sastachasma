@@ -50,6 +50,19 @@ export class ApiService {
     );
   }
 
+  // Order endpoints
+  getOrderDetails(orderId: string, userId?: number): Observable<any> {
+    if (!orderId) {
+      return throwError(() => new Error('Order ID is required'));
+    }
+    
+    return this.http.get(`${this.apiUrl}/orders/${orderId}`, {
+      headers: this.getHeaders(userId)
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
   // Filter options endpoints
   getBrands(): Observable<string[]> {
     return this.http.get<string[]>(`${this.apiUrl}/filters/brands`, {
