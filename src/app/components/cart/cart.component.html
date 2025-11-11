@@ -1,0 +1,77 @@
+<div class="cart-page container">
+  <h1 class="text-center mb-4">Your Shopping Cart</h1>
+
+  <div *ngIf="loading" class="loading-indicator">
+    Loading your cart...
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && !error">
+    <div *ngIf="cartItems.length === 0" class="empty-cart-message">
+      <h2>Your cart is empty</h2>
+      <p>Looks like you haven't added any products to your cart yet.</p>
+      <a routerLink="/products" class="btn btn-primary">Continue Shopping</a>
+    </div>
+
+    <div *ngIf="cartItems.length > 0" class="cart-content">
+      <div class="cart-items-section">
+        <div class="cart-header">
+          <div class="product-col">PRODUCT</div>
+          <div class="lens-col">LENS</div>
+          <div class="price-col">PRICE</div>
+          <div class="qty-col">QUANTITY</div>
+          <div class="total-col">TOTAL</div>
+        </div>
+
+        <div *ngFor="let item of cartItems" class="cart-item">
+          <div class="product-info">
+            <img [src]="item.product.image || 'assets/placeholder-product.jpg'" [alt]="item.product.name" class="product-image">
+            <div class="product-details">
+              <h3 class="product-name">{{ item.product.name }}</h3>
+              <p class="lens-info" *ngIf="item.lens">Lens: {{ item.lens.name }}</p>
+              <p class="price-at-addition">Price: ₹{{ item.priceAtAddition.toFixed(2) }}</p>
+            </div>
+          </div>
+          <div class="lens-detail">
+            <span *ngIf="item.lens">{{ item.lens.name }}</span>
+            <span *ngIf="!item.lens">Standard</span>
+          </div>
+          <div class="item-price">₹{{ item.priceAtAddition.toFixed(2) }}</div>
+          <div class="quantity-control">
+            <input type="number" [(ngModel)]="item.quantity" (change)="updateQuantity(item, item.quantity)" min="1" class="qty-input">
+            <button (click)="removeItem(item)" class="remove-btn">Remove</button>
+          </div>
+          <div class="item-total">₹{{ getItemTotal(item) }}</div>
+        </div>
+
+        <div class="cart-actions">
+          <a routerLink="/products" class="continue-shopping-btn">Continue Shopping</a>
+          <button (click)="clearCart()" class="clear-cart-btn">Clear Cart</button>
+        </div>
+      </div>
+
+      <div class="order-summary-section card">
+        <h2 class="card-header">Order Summary</h2>
+        <div class="card-body">
+          <div class="summary-row">
+            <span>Subtotal ({{ cartItems.length }} items)</span>
+            <span>₹{{ totalAmount.toFixed(2) }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Shipping</span>
+            <span>FREE</span>
+          </div>
+          <div class="summary-row total-row">
+            <h3>Total:</h3>
+            <h3>₹{{ totalAmount.toFixed(2) }}</h3>
+          </div>
+          <button routerLink="/checkout" class="btn btn-primary w-100">Proceed to Checkout</button>
+          <button (click)="clearCart()" class="btn btn-secondary w-100 mt-2">Clear Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

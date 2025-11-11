@@ -35,16 +35,26 @@ export class ProductListComponent implements OnInit {
     this.loading = true;
     this.productService.getProducts().subscribe(products => {
       this.products = products;
-      console.log("products "+products);
+      console.log("Products loaded:", products);
+      this.loadFilters(); // Load filters after products are loaded
       this.applyFilters();
       this.loading = false;
     });
   }
 
   loadFilters(): void {
-    this.productService.getBrands().subscribe(brands => this.brands = brands);
-    this.productService.getShapes().subscribe(shapes => this.shapes = shapes);
-    this.productService.getColors().subscribe(colors => this.colors = colors);
+    // Extract unique brands, shapes, and colors from the loaded products
+    if (this.products && this.products.length > 0) {
+      this.brands = [...new Set(this.products.map(p => p.brand))].filter(brand => brand);
+      this.shapes = [...new Set(this.products.map(p => p.shape))].filter(shape => shape);
+      this.colors = [...new Set(this.products.map(p => p.color))].filter(color => color);
+      
+      console.log('Filters loaded:', {
+        brands: this.brands,
+        shapes: this.shapes,
+        colors: this.colors
+      });
+    }
   }
 
   applyFilters(): void {

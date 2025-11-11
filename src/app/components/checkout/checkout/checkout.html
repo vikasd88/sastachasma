@@ -65,8 +65,8 @@
         <h3 class="card-header">3. Order Summary</h3>
         <div class="card-body">
           <div *ngFor="let item of cartItems" class="flex-between mb-1">
-            <span>{{ item.product.name }} ({{ item.lens.type }}) x {{ item.quantity }}</span>
-            <span>₹{{ (item.product.price + item.lens.price) * item.quantity }}</span>
+            <span>{{ item.product.name }} <span *ngIf="item.lens">({{ item.lens.type }})</span> x {{ item.quantity }}</span>
+            <span>₹{{ (item.product.price + (item.lens?.price || 0)) * item.quantity }}</span>
           </div>
           <div class="flex-between mt-3 pt-3 border-top">
             <span>Subtotal:</span>

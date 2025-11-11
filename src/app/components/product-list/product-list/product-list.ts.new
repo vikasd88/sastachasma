@@ -1,0 +1,233 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Product as SharedProduct } from '../../../models/product.model';
+import { ProductService } from '../../../services/product.service';
+import { ProductCardComponent } from '../../shared/product-card/product-card';
+import { 
+  FormsModule, 
+  ReactiveFormsModule, 
+  FormBuilder, 
+  FormGroup, 
+  FormArray, 
+  FormControl,
+  NonNullableFormBuilder
+} from '@angular/forms';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+
+// Extend the shared product interface with additional properties
+interface Product extends SharedProduct {
+  createdAt?: string | Date;
+  stock?: number;
+}
+
+interface FilterForm {
+  brands: FormArray<FormControl<boolean>>;
+  shapes: FormArray<FormControl<boolean>>;
+  colors: FormArray<FormControl<boolean>>;
+  priceMin: FormControl<number>;
+  priceMax: FormControl<number>;
+  sortBy: FormControl<string>;
+  search: FormControl<string>;
+}
+
+@Component({
+  selector: 'app-product-list',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, ProductCardComponent],
+  templateUrl: './product-list.component.html',
+  styleUrls: ['./product-list.component.scss']
+})
+export class ProductListComponent implements OnInit {
+  products: Product[] = [];
+  filteredProducts: Product[] = [];
+  loading = true;
+  error: string | null = null;
+  
+  // Filter options
+  brands: string[] = [];
+  shapes: string[] = [];
+  colors: string[] = [];
+  
+  // Price range
+  minPrice = 0;
+  maxPrice = 1000;
+  
+  // Sort options
+  sortOptions = [
+    { value: 'newest', label: 'Newest' },
+    { value: 'price-asc', label: 'Price: Low to High' },
+    { value: 'price-desc', label: 'Price: High to Low' },
+    { value: 'name-asc', label: 'Name: A to Z' },
+    { value: 'name-desc', label: 'Name: Z to A' }
+  ];
+  
+  filterForm: FormGroup<FilterForm>;
+
+  constructor(
+    private productService: ProductService,
+    private fb: NonNullableFormBuilder
+  ) {
+    // Initialize form with proper typing
+    this.filterForm = this.fb.group({
+      brands: this.fb.array<FormControl<boolean>>([], { nonNullable: true }),
+      shapes: this.fb.array<FormControl<boolean>>([], { nonNullable: true }),
+      colors: this.fb.array<FormControl<boolean>>([], { nonNullable: true }),
+      priceMin: this.fb.control(this.minPrice, { nonNullable: true }),
+      priceMax: this.fb.control(this.maxPrice, { nonNullable: true }),
+      sortBy: this.fb.control('newest', { nonNullable: true }),
+      search: this.fb.control('', { nonNullable: true })
+    });
+  }
+
+  ngOnInit(): void {
+    this.loadProducts();
+    this.loadFilters();
+    
+    // Subscribe to form value changes
+    this.filterForm.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged()
+      )
+      .subscribe(() => this.applyFilters());
+  }
+
+  loadProducts(): void {
+    this.loading = true;
+    this.error = null;
+    
+    this.productService.getProducts().subscribe({
+      next: (products) => {
+        this.products = products.map(product => ({
+          ...product,
+          createdAt: (product as any).createdAt || new Date().toISOString(),
+          stock: (product as any).stock || 0,
+          inStock: product.inStock ?? true
+        }));
+        
+        // Set price range based on products
+        this.updatePriceRange();
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error loading products:', err);
+        this.error = 'Failed to load products. Please try again later.';
+        this.loading = false;
+      }
+    });
+  }
+  
+  loadFilters(): void {
+    // Load brands, shapes, and colors from service or calculate from products
+    this.productService.getBrands().subscribe(brands => {
+      this.brands = brands;
+      this.initCheckboxArray('brands', brands);
+    });
+    
+    this.productService.getShapes().subscribe(shapes => {
+      this.shapes = shapes;
+      this.initCheckboxArray('shapes', shapes);
+    });
+    
+    this.productService.getColors().subscribe(colors => {
+      this.colors = colors;
+      this.initCheckboxArray('colors', colors);
+    });
+  }
+  
+  private initCheckboxArray(controlName: 'brands' | 'shapes' | 'colors', items: string[]): void {
+    const formArray = this.filterForm.get(controlName) as FormArray;
+    formArray.clear();
+    items.forEach(() => formArray.push(this.fb.control(false, { nonNullable: true })));
+  }
+  
+  private updatePriceRange(): void {
+    if (!this.products.length) return;
+    
+    this.minPrice = Math.min(...this.products.map(p => p.price));
+    this.maxPrice = Math.max(...this.products.map(p => p.price));
+    
+    this.filterForm.patchValue({
+      priceMin: this.minPrice,
+      priceMax: this.maxPrice
+    }, { emitEvent: false });
+  }
+  
+  getSelectedValues(controlName: 'brands' | 'shapes' | 'colors'): string[] {
+    const formArray = this.filterForm.get(controlName) as FormArray;
+    if (!formArray || !formArray.length) return [];
+    
+    const items = this[controlName];
+    return formArray.controls
+      .map((control, i) => control.value ? items[i] : null)
+      .filter((value): value is string => value !== null);
+  }
+  
+  applyFilters(): void {
+    if (!this.products.length) return;
+    
+    const formValue = this.filterForm.getRawValue();
+    const selectedBrands = this.getSelectedValues('brands');
+    const selectedShapes = this.getSelectedValues('shapes');
+    const selectedColors = this.getSelectedValues('colors');
+    const searchQuery = formValue.search.toLowerCase();
+    const priceMin = formValue.priceMin ?? this.minPrice;
+    const priceMax = formValue.priceMax ?? this.maxPrice;
+    const sortBy = formValue.sortBy ?? 'newest';
+    
+    this.filteredProducts = this.products.filter(product => {
+      const matchesBrand = !selectedBrands.length || selectedBrands.includes(product.brand);
+      const matchesShape = !selectedShapes.length || selectedShapes.includes(product.shape);
+      const matchesColor = !selectedColors.length || selectedColors.includes(product.color);
+      const matchesPrice = product.price >= priceMin && product.price <= priceMax;
+      const matchesSearch = !searchQuery ||
+                          product.name.toLowerCase().includes(searchQuery) ||
+                          (product.description?.toLowerCase().includes(searchQuery) ?? false) ||
+                          product.brand.toLowerCase().includes(searchQuery);
+      
+      return matchesBrand && matchesShape && matchesColor && matchesPrice && matchesSearch;
+    });
+    
+    this.sortProducts(sortBy);
+  }
+  
+  sortProducts(criteria: string): void {
+    if (!this.filteredProducts?.length) return;
+    
+    this.filteredProducts.sort((a, b) => {
+      switch (criteria) {
+        case 'price-asc':
+          return (a.price || 0) - (b.price || 0);
+        case 'price-desc':
+          return (b.price || 0) - (a.price || 0);
+        case 'name-asc':
+          return (a.name || '').localeCompare(b.name || '');
+        case 'name-desc':
+          return (b.name || '').localeCompare(a.name || '');
+        case 'newest':
+        default:
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+      }
+    });
+  }
+  
+  clearFilters(): void {
+    // Reset all filters to default values
+    this.filterForm.reset({
+      brands: this.brands.map(() => false),
+      shapes: this.shapes.map(() => false),
+      colors: this.colors.map(() => false),
+      priceMin: this.minPrice,
+      priceMax: this.maxPrice,
+      sortBy: 'newest',
+      search: ''
+    });
+  }
+  
+  trackByProductId(index: number, product: Product): number {
+    return product.id;
+  }
+}

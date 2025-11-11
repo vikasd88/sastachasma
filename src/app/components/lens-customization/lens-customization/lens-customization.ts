@@ -5,6 +5,7 @@ import { ProductService } from '../../../services/product.service';
 import { CartService } from '../../../services/cart.service';
 import { Product, Lens, CartItem } from '../../../models/product.model';
 import { FormsModule } from '@angular/forms';
+import { AddToCartRequest } from '../../../models/cart.model';
 
 @Component({
   selector: 'app-lens-customization',
@@ -64,14 +65,18 @@ export class LensCustomizationComponent implements OnInit {
   }
 
   addToCart(): void {
-    if (this.product && this.selectedLens) {
-      const cartItem: CartItem = {
-        product: this.product,
-        lens: this.selectedLens,
+    if (this.product) {
+      const addToCartRequest: AddToCartRequest = {
+        productId: this.product.id,
         quantity: this.quantity,
+        lensId: this.selectedLensId || undefined,
       };
-      this.cartService.addToCart(cartItem);
-      this.router.navigate(['/cart']);
+      this.cartService.addToCart(addToCartRequest).subscribe({
+        next: () => this.router.navigate(['/cart']),
+        error: (error: any) => {
+          console.error('Failed to add item to cart:', error);
+        }
+      });
     }
   }
 

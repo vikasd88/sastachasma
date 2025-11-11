@@ -1,6 +1,36 @@
+/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+:root {
+  --primary-color: #007bff;
+  --primary-rgb: 0, 123, 255;
+  --secondary-color: #6c757d;
+  --success-color: #28a745;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #17a2b8;
+
+  --text-primary: #333;
+  --text-secondary: #555;
+  --border-color: #e0e0e0;
+  --surface-color: #ffffff;
+  --background-color: #f5f7fa;
+
+  --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--background-color);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
 .main-content {
   min-height: calc(100vh - 100px); /* Adjust 100px based on header/footer height */
-  padding-top: 2rem;
-  padding-bottom: 2rem;
+  /* Removed top/bottom padding as the content area inside spectacles-collection component has its own padding */
 }
 

@@ -1,56 +1,131 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { delay, map, tap } from 'rxjs/operators';
+import { catchError, delay, finalize, map, switchMap, tap } from 'rxjs/operators';
 import { Lens, Product } from '../models/product.model';
+import { ApiService } from './api.service';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductService {
-  private apiUrl = 'assets/data/products.json';
+  private apiUrl = environment.apiUrl || 'http://localhost:8081/api';
   private products = new BehaviorSubject<Product[]>([]);
   private lenses = new BehaviorSubject<Lens[]>([]);
+  loading: boolean = true;
+  error: string | null = null;
+  
+  // Public observables
+  public readonly lenses$ = this.lenses.asObservable();
+  
+  // Caches
+  private readonly lensCache = new Map<number, Lens>();
+  private readonly productCache = new Map<number, Product>();
+  
+  // Public observables for components
+  public readonly products$ = this.products.asObservable();
+  public readonly loading$ = new BehaviorSubject<boolean>(false);
+  public readonly error$ = new BehaviorSubject<string | null>(null);
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient,private apiService: ApiService) {
     this.loadData();
   }
 
   private loadData(): void {
-    this.http.get<{ products: Product[], lenses: Lens[] }>(this.apiUrl).pipe(
-      tap((data: { products: Product[], lenses: Lens[] }) => {
-        console.log('Loaded data:', data);
-        this.products.next(data.products || []);
-        this.lenses.next(data.lenses || []);
+    this.loading = true;
+    
+    this.http.get<Product[]>(`${this.apiUrl}/products`).pipe(
+      tap((response: any) => {
+        // Handle both array and object responses
+        const products = Array.isArray(response) ? response : 
+                       (response.products || Object.values(response));
+        
+        if (!products || !Array.isArray(products)) {
+          throw new Error('Invalid products data received from API');
+        }
+        
+        const processedProducts = products.map(product => ({
+          ...product,
+          image: product.image || product.imageUrl || 'assets/images/default-product.png',
+          material: product.material || product.frameMaterial || 'Not specified',
+          inStock: product.inStock !== undefined ? product.inStock : true
+        }));
+        
+        this.products.next(processedProducts);
+        console.log('Processed products:', processedProducts);
+      }),
+      catchError((error: any) => {
+        console.error('Error loading products:', error);
+        this.error = 'Failed to load products. Please try again later.';
+        return of([]);
+      }),
+      finalize(() => {
+        this.loading = false;
       })
     ).subscribe();
   }
 
+  /**
+   * Get products observable
+   * Components should subscribe to this to get the latest products
+   */
+  /**
+   * Get products observable
+   * Components should subscribe to this to get the latest products
+   */
   getProducts(): Observable<Product[]> {
-    return this.products.asObservable().pipe(
-      tap(products => console.log('Products from service:', products))
-    );
+    // If products are empty and not currently loading, trigger a load
+    if (this.products.value.length === 0 && !this.loading$) {
+      this.loadProducts();
+    }
+    return this.products$;
   }
-
+  
+  /**
+   * Refresh products from the server
+   */
+  refreshProducts(): void {
+    this.loadProducts();
+  }
+  /**
+   * Get product by ID
+   * @param id Product ID
+   * @returns Observable of Product or undefined if not found
+   */
   getProductById(id: number): Observable<Product | undefined> {
-    return this.products.pipe(
-      map((products: Product[]) => products.find(p => p.id === id)),
-      tap((product: Product | undefined) => console.log('Product by ID:', product))
+    // First check if product exists in the cache
+    const cachedProduct = this.products.value.find(p => p.id === id);
+    if (cachedProduct) {
+      return of(cachedProduct);
+    }
+
+    // If not in cache, fetch from API
+    this.loading = true;
+    return this.apiService.getProductById(id).pipe(
+      map(response => response as Product),
+      tap({
+        next: (product) => {
+          // Add to cache if not already present
+          if (product && !this.products.value.some(p => p.id === product.id)) {
+            this.products.next([...this.products.value, product]);
+          }
+          this.error = null;
+        },
+        error: (error) => {
+          console.error(`Error loading product ${id}:`, error);
+          this.error = `Failed to load product ${id}`;
+        }
+      }),
+      catchError(error => {
+        console.error('API Error:', error);
+        return of(undefined);
+      }),
+      finalize(() => this.loading = false)
     );
   }
 
-  getLenses(): Observable<Lens[]> {
-    return this.lenses.asObservable().pipe(
-      tap((lenses: Lens[]) => console.log('Lenses from service:', lenses))
-    );
-  }
 
-  getLensById(id: number): Observable<Lens | undefined> {
-    return this.lenses.pipe(
-      map((lenses: Lens[]) => lenses.find(l => l.id === id)),
-      tap((lens: Lens | undefined) => console.log('Lens by ID:', lens))
-    );
-  }
 
   searchProducts(query: string): Observable<Product[]> {
     const searchTerm = query.toLowerCase();
@@ -105,5 +180,112 @@ export class ProductService {
     return this.products.pipe(
       map((products: Product[]) => [...new Set(products.map(p => p.color))])
     );
+  }
+
+  /**
+   * Get all available lenses
+   * @param forceRefresh If true, forces a refresh from the server
+   * @returns Observable of Lens array
+   */
+  getLenses(forceRefresh: boolean = false): Observable<Lens[]> {
+    if (forceRefresh || this.lenses.value.length === 0) {
+      this.loadLenses();
+    }
+    return this.lenses$;
+  }
+  
+  /**
+   * Get a specific lens by ID
+   * @param id The lens ID
+   * @returns Observable of Lens or undefined if not found
+   */
+  getLensById(id: number): Observable<Lens | undefined> {
+    // Check cache first
+    const cachedLens = this.lensCache.get(id);
+    if (cachedLens) {
+      return of(cachedLens);
+    }
+    
+    // If not in cache but we have lenses loaded, find it
+    const existingLens = this.lenses.value.find(l => l.id === id);
+    if (existingLens) {
+      this.lensCache.set(id, existingLens);
+      return of(existingLens);
+    }
+    
+    // If not found, try to load it from the API
+    return this.http.get<Lens>(`${this.apiUrl}/lenses/${id}`).pipe(
+      tap(lens => {
+        if (lens) {
+          this.lensCache.set(id, lens);
+        }
+      }),
+      catchError(() => of(undefined))
+    );
+  }
+
+  /**
+   * Load lenses from the API
+   * @private
+   */
+  /**
+   * Load products from the API
+   * @private
+   */
+  private loadProducts(): void {
+    if (this.loading$.value) return;
+    
+    this.loading$.next(true);
+    this.error$.next(null);
+    
+    this.http.get<{ products: Product[] }>(`${this.apiUrl}/products`).pipe(
+      map(response => response.products || []),
+      tap(products => {
+        const processedProducts = products.map(product => ({
+          ...product,
+          image: product.image || product.imageUrl || 'assets/images/default-product.png',
+          material: product.material || product.frameMaterial || 'Not specified',
+          inStock: product.inStock !== undefined ? product.inStock : true
+        }));
+        
+        this.products.next(processedProducts);
+        this.error$.next(null);
+      }),
+      catchError(error => this.handleError('Failed to load products', error, [])),
+      finalize(() => this.loading$.next(false))
+    ).subscribe();
+  }
+
+  /**
+   * Load lenses from the API
+   * @private
+   */
+  private loadLenses(): void {
+    this.loading$.next(true);
+    
+    this.apiService.getLenses().pipe(
+      tap({
+        next: (lenses: Lens[]) => {
+          this.lenses.next(lenses || []);
+          this.error$.next(null);
+        },
+        error: (error: any) => {
+          console.error('Error loading lenses:', error);
+          this.error$.next('Failed to load lenses. Please try again later.');
+          this.lenses.next([]);
+        }
+      }),
+      catchError(error => this.handleError('Failed to load lenses', error, [])),
+      finalize(() => this.loading$.next(false))
+    ).subscribe();
+  }
+  
+  /**
+   * Handle API errors
+   */
+  private handleError<T>(message: string, error: any, result?: T): Observable<T> {
+    console.error(`${message}:`, error);
+    this.error$.next(message);
+    return of(result as T);
   }
 }

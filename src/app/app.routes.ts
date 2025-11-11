@@ -1,13 +1,13 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './components/home/home/home';
-import { ProductListComponent } from './components/product-list/product-list/product-list';
-import { ProductDetailComponent } from './components/product-detail/product-detail/product-detail';
-import { CartComponent } from './components/cart/cart/cart';
-import { CheckoutComponent } from './components/checkout/checkout/checkout';
-import { LensCustomizationComponent } from './components/lens-customization/lens-customization/lens-customization';
+import { CartComponent } from './components/cart/cart.component';
 import { OrderSummaryComponent } from './components/order-summary/order-summary';
 import { TrackOrderComponent } from './components/track-order/track-order';
 import { OrderConfirmationComponent } from './components/order-confirmation/order-confirmation';
+import { ProductListComponent } from './components/product-list/product-list/product-list';
+import { ProductDetailComponent } from './components/product-detail/product-detail/product-detail';
+import { LensCustomizationComponent } from './components/lens-customization/lens-customization/lens-customization';
+import { CheckoutComponent } from './components/checkout/checkout/checkout';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -16,7 +16,7 @@ export const routes: Routes = [
   { path: 'customize/:id', component: LensCustomizationComponent },
   { path: 'cart', component: CartComponent },
   { path: 'checkout', component: CheckoutComponent },
-  { path: 'order-summary', component: OrderSummaryComponent },
+  { path: 'order-summary/:orderId', component: OrderSummaryComponent },
   { path: 'order-confirmation', component: OrderConfirmationComponent },
   { path: 'track-order', component: TrackOrderComponent },
   { path: '**', redirectTo: '', pathMatch: 'full' } // Wildcard route for a 404-like experience

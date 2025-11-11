@@ -4,9 +4,10 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } 
 import { Router, ActivatedRoute } from '@angular/router';
 import { OrderService } from '../../services/order.service';
 import { finalize } from 'rxjs/operators';
-import { OrderDetails, OrderStatus } from '../../models/order.model';
+import { OrderDetails, OrderStatus, OrderStatusType } from '../../models/order.model';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { IconDefinition, faSpinner, faCheckCircle, faTruck, faClock, faTimesCircle, faSearch, faHeadset, faPrint, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
+import { CartItem } from '../../models/product.model'; // Corrected import
 
 @Component({
   selector: 'app-track-order',
@@ -36,12 +37,12 @@ export class TrackOrderComponent implements OnInit {
   // Component state
   trackForm: FormGroup;
   isLoading = false;
-  errorMessage: string | null = null;
+  error: string | null = null; // Renamed from errorMessage
   order: OrderDetails | null = null;
   currentStatus: OrderStatus | null = null;
 
   // Order status tracking
-  readonly statuses = ['processing', 'shipped', 'delivered'] as const;
+  readonly statuses = ['processing', 'shipped', 'delivered', 'cancelled'] as const;
 
   // Inject services
   private readonly fb = inject(FormBuilder);
@@ -83,27 +84,27 @@ export class TrackOrderComponent implements OnInit {
     }
 
     this.isLoading = true;
-    this.errorMessage = null;
+    this.error = null; // Renamed from errorMessage
 
     const { orderId, email } = this.trackForm.value;
 
-    this.orderService.trackOrder(orderId, email)
+    this.orderService.getOrderDetails(orderId)
       .pipe(
         finalize(() => this.isLoading = false)
       )
       .subscribe({
-        next: (order) => {
+        next: (order:any) => {
           if (order) {
             this.order = order;
             this.currentStatus = this.getLatestStatus(order.statusHistory);
             this.updateUrl(orderId, email);
           } else {
-            this.errorMessage = 'Order not found. Please check your details and try again.';
+            this.error = 'Order not found. Please check your details and try again.'; // Renamed from errorMessage
           }
         },
-        error: (err) => {
+        error: (err:any) => {
           console.error('Error tracking order:', err);
-          this.errorMessage = err?.message || 'Failed to track order. Please try again.';
+          this.error = err?.message || 'Failed to track order. Please try again.'; // Renamed from errorMessage
         }
       });
   }
@@ -225,37 +226,29 @@ export class TrackOrderComponent implements OnInit {
   }
 
   getOrderSubtotal(): number {
-    if (!this.order?.items?.length) return 0;
-    return this.order.items.reduce((sum, item) => {
-      const quantity = item.quantity || 1;
-      const price = item.price || 0;
-      return sum + (price * quantity);
-    }, 0);
+    if (!this.order?.items) return 0;
+    return this.order.items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   }
 
   getOrderTotal(): number {
-    const subtotal = this.getOrderSubtotal();
-    const shipping = this.order?.shippingMethod?.price || 0;
-    const discount = this.order?.discount || 0;
-
-    return subtotal + shipping - discount;
-  }
-
-  getStatusDate(status: string): Date | null {
-    if (!this.order?.statusHistory?.length) return null;
-
-    const statusEntry = this.order.statusHistory.find(
-      s => s.status.toLowerCase() === status.toLowerCase()
-    );
-
-    return statusEntry?.date ? new Date(statusEntry.date) : null;
+    if (!this.order) return 0;
+    let total = this.getOrderSubtotal();
+    // Add shipping cost if applicable
+    if (this.order.shippingMethod) {
+      total += this.order.shippingMethod.price;
+    }
+    // Apply discount if applicable
+    if (this.order.discount) {
+      total -= this.order.discount;
+    }
+    return total;
   }
 
   getStatusLocation(status: string): string {
     if (!this.order?.statusHistory?.length) return '';
 
     const statusEntry = this.order.statusHistory.find(
-      s => s.status.toLowerCase() === status.toLowerCase()
+      (s: OrderStatus) => s.status.toLowerCase() === status.toLowerCase()
     );
 
     return statusEntry?.location || '';

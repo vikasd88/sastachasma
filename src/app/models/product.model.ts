@@ -7,10 +7,13 @@ export interface Product {
   discount: number;
   rating: number;
   reviews: number;
-  image: string;
+  image: string;  // Changed from imageUrl to match template
+  imageUrl: string; // Keep for backward compatibility
   description: string;
   shape: string;
-  material: string;
+  frameMaterial: string;
+  material: string; // Added for product detail page
+  lensType: string;
   color: string;
   frameSize: string;
   inStock: boolean;
@@ -21,14 +24,40 @@ export interface Lens {
   type: string;
   price: number;
   description: string;
+  name: string;
 }
 
+// Frontend cart item with full product details
 export interface CartItem {
+  id: number | string;
   product: Product;
-  lens: Lens;
+  lens?: Lens;
   quantity: number;
-  frameColor?: string;
-  lensType?: string;
+  priceAtAddition: number;
+  totalPrice: number;
+  productName: string;
+  productRating?: number | null;
+  frameSize?: number | null;
+}
+
+// Backend cart item DTO
+export interface BackendCartItem {
+  id: number;
+  productId: number;
+  productName: string;
+  quantity: number;
+  priceAtAddition: number;
+  totalPrice: number;
+  productRating: number | null;
+}
+
+// Backend cart response
+export interface BackendCartResponse {
+  id: number;
+  userId: number;
+  items: BackendCartItem[];
+  totalPrice: number;
+  isActive: boolean;
 }
 
 export interface Order {

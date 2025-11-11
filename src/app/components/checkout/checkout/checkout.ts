@@ -1,9 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CartService } from '../../../services/cart.service';
+import { OrderService } from '../../../services/order.service';
 import { CartItem } from '../../../models/product.model';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { lastValueFrom } from 'rxjs';
+import { OrderDetails } from '../../../models/order.model';
 
 @Component({
   selector: 'app-checkout',
@@ -25,7 +28,11 @@ export class CheckoutComponent implements OnInit {
   };
   paymentMethod: string = 'cod'; // Default to Cash on Delivery
 
-  constructor(private cartService: CartService, private router: Router) {}
+  constructor(
+    private cartService: CartService, 
+    private orderService: OrderService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.cartService.cart$.subscribe(items => {
@@ -37,37 +44,59 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
-  placeOrder(): void {
+  isPlacingOrder = false;
+  orderError: string | null = null;
+
+  async placeOrder(): Promise<void> {
     if (this.cartItems.length === 0) {
       alert('Your cart is empty. Please add items before checking out.');
       this.router.navigate(['/products']);
       return;
     }
 
-    // Generate a random order ID
-    const orderId = 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-    
-    // Create order details
-    const orderDetails = {
-      orderId: orderId,
-      items: [...this.cartItems],
-      total: this.cartTotal,
-      shipping: { ...this.shippingAddress },
-      payment: this.paymentMethod,
-      orderDate: new Date()
-    };
+    this.isPlacingOrder = true;
+    this.orderError = null;
 
-    // In a real app, you would send this to your backend
-    console.log('Placing order with details:', orderDetails);
-    
-    // Save order details to localStorage for the order summary page
-    localStorage.setItem('lastOrder', JSON.stringify(orderDetails));
-    
-    // Clear the cart
-    this.cartService.clearCart();
-    
-    // Navigate to order summary page
-    this.router.navigate(['/order-summary']);
+    try {
+      // Prepare order items with required properties
+      const orderItems = this.cartItems.map(item => ({
+        productId: item.product.id,
+        name: item.product.name,
+        price: item.product.price + (item.lens?.price || 0),
+        quantity: item.quantity,
+        imageUrl: item.product.imageUrl || 'assets/placeholder-product.jpg',
+        lensName: item.lens?.name,  // Fixed: Changed from item.lenses to item.lens
+        frameSize: item.frameSize
+      }));
+
+      const shippingAddressPayload = {
+        name: this.shippingAddress.fullName,
+        street: this.shippingAddress.addressLine1, // Assuming addressLine1 is the street
+        city: this.shippingAddress.city,
+        state: this.shippingAddress.state,
+        pincode: this.shippingAddress.zipCode,
+        phone: '' // Phone is not collected in this form, provide an empty string or default
+      };
+
+      // Place the order using the OrderService
+      const order = await lastValueFrom(
+        this.orderService.placeOrder(orderItems, shippingAddressPayload, this.paymentMethod)
+      );
+
+      // Clear the cart after successful order placement
+      this.cartService.clearCart().subscribe();
+      
+      // Navigate to order summary with order ID
+      this.router.navigate(['/order-summary', order.orderId], { 
+        state: { order: order } 
+      });
+      
+    } catch (error) {
+      console.error('Error placing order:', error);
+      this.orderError = 'Failed to place order. Please try again.';
+    } finally {
+      this.isPlacingOrder = false;
+    }
   }
 
 }

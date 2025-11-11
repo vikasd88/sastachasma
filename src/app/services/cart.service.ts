@@ -1,6 +1,10 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { CartItem, Order } from '../models/product.model';
+import { BehaviorSubject, catchError, finalize, map, Observable, of, tap, throwError } from 'rxjs';
+import { AddToCartRequest, UpdateCartItemRequest } from '../models/cart.model';
+import { ApiService } from './api.service';
+import { environment } from '../../environments/environment';
+import { HttpErrorResponse } from '@angular/common/http';
+import { CartItem } from '../models/product.model';
 
 @Injectable({
   providedIn: 'root'
@@ -9,109 +13,254 @@ export class CartService {
   private cartItems: CartItem[] = [];
   private cartSubject = new BehaviorSubject<CartItem[]>([]);
   public cart$ = this.cartSubject.asObservable();
-
-  constructor() {
-    this.loadCartFromLocalStorage();
+  loading = false;
+  error: string | null = null;
+  
+  constructor(private apiService: ApiService) {
+    this.loadCart();
   }
 
-  // Add item to cart
-  addToCart(item: CartItem): void {
-    const existingItem = this.cartItems.find(
-      ci => ci.product.id === item.product.id && ci.lens.id === item.lens.id
-    );
+  // Initialize a new cart for the user
+  private initializeCart(): void {
+    this.cartItems = [];
+    this.updateCart();
+    console.log('Initialized new cart');
+  }
 
-    if (existingItem) {
-      existingItem.quantity += item.quantity;
-    } else {
-      this.cartItems.push(item);
+  addToCart(item: AddToCartRequest): Observable<CartItem[]> {
+    this.loading = true;
+    this.error = null;
+    
+    // Ensure we have a cart before adding items
+    if (!this.cartItems) {
+      this.cartItems = [];
     }
 
-    this.updateCart();
-  }
+    console.log('Adding item to cart:', item);
 
-  // Remove item from cart
-  removeFromCart(productId: number, lensId: number): void {
-    this.cartItems = this.cartItems.filter(
-      ci => !(ci.product.id === productId && ci.lens.id === lensId)
-    );
-    this.updateCart();
-  }
-
-  // Update item quantity
-  updateQuantity(productId: number, lensId: number, quantity: number): void {
-    const item = this.cartItems.find(
-      ci => ci.product.id === productId && ci.lens.id === lensId
-    );
-    if (item) {
-      item.quantity = quantity;
-      if (item.quantity <= 0) {
-        this.removeFromCart(productId, lensId);
-      } else {
+    return this.apiService.addToCart(
+      environment.defaultUserId,
+      item.productId,
+      item.quantity,
+      item.lensId
+    ).pipe(
+      tap((response: any) => {
+        try {
+          // Handle different response formats
+          const cart = response.body || response;
+          console.log('Cart response:', cart);
+          
+          if (!cart) {
+            throw new Error('Empty response from server');
+          }
+          
+          // Map backend items to frontend cart items and update local state
+          this.cartItems = this.mapToCartItems(cart.items || []);
+          this.updateCart();
+          
+          return this.cartItems;
+        } catch (error) {
+          console.error('Error processing cart response:', error);
+          throw error;
+        }
+      }),
+      catchError(error => {
+        console.error('Failed to add item to cart:', error);
+        this.error = 'Failed to add item to cart. Please try again.';
+        this.cartItems = [];
         this.updateCart();
-      }
-    }
+        return throwError(() => error);
+      }),
+      finalize(() => this.loading = false)
+    );
   }
 
-  // Get cart items
-  getCartItems(): Observable<CartItem[]> {
-    return this.cart$;
+  // Map backend cart items to frontend cart items
+  private mapToCartItems(backendItems: any[]): CartItem[] {
+    if (!Array.isArray(backendItems)) return [];
+    
+    return backendItems.map(item => ({
+      id: item.id,
+      product: {
+        id: item.productId,
+        name: item.productName,
+        price: item.priceAtAddition,
+        // Add default values for required product properties
+        brand: '',
+        originalPrice: item.priceAtAddition,
+        discount: 0,
+        rating: item.productRating || 0,
+        reviews: 0,
+        // Use item.imageUrl if available, otherwise use a default image
+        image: item.imageUrl || 'assets/placeholder-product.jpg',
+        imageUrl: item.imageUrl || 'assets/placeholder-product.jpg',
+        description: item.description || '',
+        shape: '',
+        frameMaterial: '',
+        material: '',
+        lensType: '',
+        color: item.color || '',
+        frameSize: '',
+        inStock: true
+      },
+      quantity: item.quantity,
+      priceAtAddition: item.priceAtAddition,
+      totalPrice: item.totalPrice,
+      productName: item.productName,
+      productRating: item.productRating
+    }));
+  }
+
+  // Load cart from API
+  loadCart(): void {
+    if (this.loading) return;
+
+    this.loading = true;
+    this.error = null;
+    
+    this.apiService.getCart(environment.defaultUserId).pipe(
+      tap({
+        next: (response: any) => {
+          try {
+            // Handle different response formats
+            const cart = response?.body || response;
+            
+            if (!cart) {
+              throw new Error('Empty response from server');
+            }
+            
+            // Map backend items to frontend cart items
+            this.cartItems = this.mapToCartItems(Array.isArray(cart.items) ? cart.items : []);
+            this.updateCart();
+          } catch (error) {
+            console.error('Error processing cart response:', error);
+            throw error;
+          }
+        },
+        error: (error) => {
+          console.error('Error in cart response:', error);
+          throw error;
+        }
+      }),
+      catchError((error: any) => {
+        console.error('Failed to load cart:', error);
+        this.error = error.error?.message || 'Failed to load cart. Please try again.';
+        this.cartItems = [];
+        this.updateCart();
+        return of([]);
+      }),
+      finalize(() => {
+        this.loading = false;
+      })
+    ).subscribe();
+  }
+
+  // Update cart state
+  updateCart(): void {
+    // Ensure we always have a valid array
+    const items = Array.isArray(this.cartItems) ? this.cartItems : [];
+    this.cartSubject.next([...items]);
+  }
+
+  // Place order
+  placeOrder(orderData: any): Observable<{ orderId: string }> {
+    this.loading = true;
+    return this.apiService.placeOrder(environment.defaultUserId, orderData).pipe(
+      tap((response: { orderId: string }) => {
+        this.cartItems = [];
+        this.updateCart();
+        return response;
+      }),
+      catchError(this.handleError<{ orderId: string }>('placeOrder')),
+      finalize(() => this.loading = false)
+    );
+  }
+
+  // Error handling helper with generic type
+  private handleError<T>(operation: string = 'operation') {
+    return (error: HttpErrorResponse): Observable<T> => {
+      console.error(`${operation} failed:`, error);
+      const errorMessage = error.error?.message || error.message || 'Unknown error';
+      this.error = `Failed to ${operation}. ${errorMessage}`;
+      return throwError(() => new Error(`${operation} failed: ${errorMessage}`));
+    };
   }
 
   // Get cart total
   getCartTotal(): number {
+    if (!this.cartItems || this.cartItems.length === 0) {
+      return 0;
+    }
+    
     return this.cartItems.reduce((total, item) => {
-      return total + (item.product.price + item.lens.price) * item.quantity;
+      if (!item || !item.product) {
+        console.warn('Invalid cart item found:', item);
+        return total;
+      }
+      
+      const productPrice = item.product?.price || 0;
+      const lensPrice = item.lens?.price || 0;
+      const itemPrice = productPrice + lensPrice;
+      const itemTotal = itemPrice * (item.quantity || 1);
+      
+      return total + itemTotal;
     }, 0);
   }
 
-  // Get cart count
-  getCartCount(): number {
-    return this.cartItems.reduce((count, item) => count + item.quantity, 0);
-  }
-
-  // Clear cart
-  clearCart(): void {
-    this.cartItems = [];
-    this.updateCart();
-  }
-
-  // Get current cart items (synchronous)
-  getCurrentCartItems(): CartItem[] {
-    return this.cartItems;
-  }
-
-  // Private method to update cart
-  private updateCart(): void {
-    this.cartSubject.next([...this.cartItems]);
-    this.saveCartToLocalStorage();
-  }
-
-  // Save cart to localStorage
-  private saveCartToLocalStorage(): void {
-    localStorage.setItem('cart', JSON.stringify(this.cartItems));
-  }
-
-  // Load cart from localStorage
-  private loadCartFromLocalStorage(): void {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      try {
-        this.cartItems = JSON.parse(savedCart);
-        this.cartSubject.next([...this.cartItems]);
-      } catch (e) {
-        console.error('Error loading cart from localStorage', e);
-      }
+  // Update item quantity
+  updateQuantity(itemId: number, quantity: number): Observable<CartItem> {
+    if (quantity < 1) {
+      return throwError(() => new Error('Quantity must be at least 1'));
     }
+
+    this.loading = true;
+    return this.apiService.updateCartItem(environment.defaultUserId, itemId, quantity).pipe(
+      tap((updatedItem: CartItem) => {
+        const index = this.cartItems.findIndex(item => parseInt(item.id as string) === itemId);
+        if (index !== -1) {
+          this.cartItems[index] = { ...this.cartItems[index], quantity };
+          this.updateCart();
+        }
+        return updatedItem;
+      }),
+      catchError(this.handleError<CartItem>('update quantity')),
+      finalize(() => this.loading = false)
+    );
   }
 
-  // Place order (dummy API call)
-  placeOrder(order: Order): Observable<any> {
-    return new Observable(observer => {
-      setTimeout(() => {
-        const orderId = 'ORD-' + Date.now();
-        observer.next({ success: true, orderId });
-        observer.complete();
-      }, 1000);
-    });
+  // Remove item from cart
+  removeFromCart(itemId: number): Observable<void> {
+    this.loading = true;
+    return this.apiService.removeFromCart(environment.defaultUserId, itemId).pipe(
+      tap(() => {
+        this.cartItems = this.cartItems.filter(item => parseInt(item.id as string) !== itemId);
+        this.updateCart();
+      }),
+      catchError(this.handleError<void>('removeFromCart')),
+      finalize(() => {
+        this.loading = false;
+      })
+    );
+  }
+
+  // Clear the entire cart
+  clearCart(): Observable<void> {
+    if (this.loading) return of(undefined);
+
+    this.loading = true;
+    this.error = null;
+
+    return this.apiService.clearCart(environment.defaultUserId).pipe(
+      tap(() => {
+        this.cartItems = [];
+        this.updateCart();
+      }),
+      catchError(error => {
+        console.error('Error clearing cart:', error);
+        this.error = error.error?.message || 'Failed to clear cart. Please try again.';
+        return throwError(() => error);
+      }),
+      finalize(() => this.loading = false)
+    );
   }
 }
