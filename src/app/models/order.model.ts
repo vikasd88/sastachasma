@@ -21,15 +21,20 @@ export interface OrderItem {
   lensId?: number;
   lensName?: string;
   lensPrice?: number;
+  frameSize?: string | number | null;
 }
 
 export interface ShippingAddress {
   name: string;
   street: string;
+  addressLine1?: string;
+  addressLine2?: string;
   city: string;
   state: string;
   pincode: string;
+  zipCode?: string;
   phone: string;
+  country?: string;
 }
 
 export interface PaymentDetails {
@@ -37,6 +42,7 @@ export interface PaymentDetails {
   status: PaymentStatusType;
   amount: number;
   transactionId?: string;
+  paymentDate?: Date;
 }
 
 export interface ShippingMethod {

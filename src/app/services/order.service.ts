@@ -38,41 +38,57 @@ export class OrderService {
 
     const now = new Date().toISOString();
     const estimatedDelivery = this.calculateEstimatedDelivery().toISOString();
-    const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    // Calculate subtotal (sum of all items including lens prices)
+    const subtotal = items.reduce((sum, item) => {
+      const itemPrice = item.price + (item.lensPrice || 0);
+      return sum + (itemPrice * item.quantity);
+    }, 0);
 
+    // Create the order request
     const orderRequest: OrderDetails = {
       orderId: this.generateOrderId(),
       customerName: shippingAddress.name,
-      orderDate: new Date(now), // Convert back to Date object after creation if needed, or send as string and let backend handle
-      estimatedDelivery: new Date(estimatedDelivery), // Same as above
+      orderDate: new Date(now),
+      estimatedDelivery: new Date(estimatedDelivery),
       items: items.map(item => ({
         productId: item.productId,
         name: item.name,
         price: item.price,
+        lensPrice: item.lensPrice || 0,
         quantity: item.quantity,
         imageUrl: item.imageUrl || 'assets/placeholder-product.jpg',
-        lensId: item.lensId || undefined,
-        lensName: item.lensName || undefined,
-        lensPrice: item.lensPrice || 0,
-        frameSize: (item as any).frameSize || 'standard'
+        lensId: item.lensId,
+        lensName: item.lensName,
+        frameSize: (item as any).frameSize || 'standard',
+        totalPrice: (item.price + (item.lensPrice || 0)) * item.quantity
       })),
-      shippingAddress: shippingAddress,
+      shippingAddress: {
+        ...shippingAddress,
+        phone: shippingAddress.phone || 'Not provided',
+        country: shippingAddress.country || 'India'
+      },
       payment: {
         method: paymentMethod,
         status: (paymentMethod === 'cod' ? 'pending' : 'completed') as PaymentStatusType,
-        amount: total,
-        transactionId: 'TXN' + Math.floor(10000000 + Math.random() * 90000000).toString()
+        amount: subtotal,
+        transactionId: 'TXN' + Math.floor(10000000 + Math.random() * 90000000).toString(),
+        paymentDate: new Date(now)
       },
       statusHistory: [
         {
           status: 'processing' as OrderStatusType,
-          date: new Date(now), // Convert back to Date object
+          date: new Date(now),
           description: 'Order received and is being processed.'
         }
       ],
-      total: total,
-      shippingMethod: { name: 'Standard Shipping', price: 0, estimatedDays: 7 }, // Default for now
-      discount: 0 // Default for now
+      total: subtotal,
+      shippingMethod: { 
+        name: 'Standard Shipping', 
+        price: 0, 
+        estimatedDays: 7 
+      },
+      discount: 0
     };
 
     console.log('Sending order request:', JSON.stringify(orderRequest, null, 2));

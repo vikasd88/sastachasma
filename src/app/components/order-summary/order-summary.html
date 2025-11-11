@@ -26,12 +26,30 @@
             <div class="order-item" *ngFor="let item of (orderDetails?.items || localOrderDetails?.items || [])">
               <img [src]="getProductImage(item)" [alt]="item.name" class="item-image">
               <div class="item-details">
-                <h4>{{ item.name }}</h4>
-                <p class="item-specs">
-                  <span *ngIf="item.lensName">Lens: {{ item.lensName }} • </span>
-                  <span>Qty: {{ item.quantity }}</span>
-                </p>
-                <p class="item-price">{{ formatPrice(item.price * item.quantity) }}</p>
+                <h4>{{ item.name }} <span class="quantity">x{{ item.quantity }}</span></h4>
+                
+                <!-- Frame Size (if available) -->
+                <div *ngIf="item.frameSize" class="frame-size">
+                  <span>Frame Size: {{ item.frameSize }}</span>
+                </div>
+                
+                <!-- Frame Price -->
+                <div class="price-row">
+                  <span>Frame ({{ item.quantity }}x {{ formatPrice(item.price) }})</span>
+                  <span>{{ formatPrice(item.price * item.quantity) }}</span>
+                </div>
+                
+                <!-- Lens Price (if applicable) -->
+                <div *ngIf="item.lensPrice && item.lensPrice > 0" class="price-row lens-price">
+                  <span>{{ item.lensName || 'Custom Lens' }} ({{ item.quantity }}x {{ formatPrice(item.lensPrice) }})</span>
+                  <span>+ {{ formatPrice(item.lensPrice * item.quantity) }}</span>
+                </div>
+                
+                <!-- Item Total -->
+                <div class="price-row item-total">
+                  <strong>Item Total</strong>
+                  <strong>{{ formatPrice((item.price + (item.lensPrice || 0)) * item.quantity) }}</strong>
+                </div>
               </div>
             </div>
           </div>

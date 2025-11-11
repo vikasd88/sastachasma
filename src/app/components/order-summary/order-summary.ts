@@ -51,10 +51,66 @@ export class OrderSummaryComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
-      this.orderId = params.get('id');
-      this.loadOrderDetails();
-    });
+    console.log('OrderSummaryComponent initialized');
+    
+    // First check for order data in navigation state
+    const navigation = this.router.getCurrentNavigation();
+    const state = navigation?.extras.state as { order: any };
+    
+    console.log('Navigation state:', state);
+    
+    if (state?.order) {
+      console.log('Using order from navigation state:', state.order);
+      // If we have order data in the state, use it directly
+      this.localOrderDetails = this.mapToLocalOrderDetails(state.order);
+      console.log('Mapped order details:', this.localOrderDetails);
+      this.loading = false;
+      // Also save to local storage for future reference
+      localStorage.setItem('lastOrder', JSON.stringify(this.localOrderDetails));
+    } else {
+      console.log('No order in navigation state, checking URL params');
+      // Check local storage first for immediate feedback
+      const lastOrder = localStorage.getItem('lastOrder');
+      if (lastOrder) {
+        try {
+          this.localOrderDetails = JSON.parse(lastOrder);
+          console.log('Loaded order from localStorage:', this.localOrderDetails);
+          this.loading = false;
+        } catch (e) {
+          console.error('Error parsing order from localStorage:', e);
+        }
+      }
+      
+      // Then check URL parameters
+      this.route.paramMap.subscribe(params => {
+        this.orderId = params.get('id');
+        console.log('Order ID from URL:', this.orderId);
+        if (this.orderId) {
+          this.loadOrderDetails();
+        } else {
+          console.warn('No order ID in URL and no order in state');
+          this.error = 'No order details found. Please check your order confirmation email.';
+          this.loading = false;
+        }
+      });
+    }
+    
+    // Fallback: Check for order data in local storage after a short delay
+    setTimeout(() => {
+      if ((!this.orderDetails && !this.localOrderDetails) || this.loading) {
+        console.log('Falling back to local storage check');
+        const lastOrder = localStorage.getItem('lastOrder');
+        if (lastOrder) {
+          try {
+            this.localOrderDetails = JSON.parse(lastOrder);
+            this.loading = false;
+            console.log('Loaded order from local storage:', this.localOrderDetails);
+          } catch (e) {
+            console.error('Error parsing order from localStorage:', e);
+          }
+        }
+      }
+    }, 500);
   }
 
   async loadOrderDetails(): Promise<void> {
@@ -62,39 +118,51 @@ export class OrderSummaryComponent implements OnInit {
       this.loading = true;
       this.error = null;
       
-      // First try to get order details from local storage (for immediate feedback)
+      console.log('Loading order details for ID:', this.orderId);
+      
+      // If we have an order ID, try to fetch the latest order details from the server first
+      if (this.orderId) {
+        try {
+          console.log('Fetching order details from server...');
+          const order = await firstValueFrom(this.orderService.getOrderDetails(this.orderId));
+          console.log('Order details from server:', order);
+          
+          if (order) {
+            this.orderDetails = order;
+            this.localOrderDetails = this.mapToLocalOrderDetails(order);
+            console.log('Mapped order details:', this.localOrderDetails);
+            
+            // Update local storage with the latest order details
+            localStorage.setItem('lastOrder', JSON.stringify(this.localOrderDetails));
+            this.loading = false;
+            return;
+          }
+        } catch (error) {
+          console.error('Error fetching order from server:', error);
+          // If server fetch fails, fall back to local storage
+        }
+      }
+      
+      // Fallback to local storage if server fetch fails or no order ID
+      console.log('Falling back to local storage');
       const lastOrder = localStorage.getItem('lastOrder');
       if (lastOrder) {
         try {
           const parsedOrder = JSON.parse(lastOrder) as LocalOrderDetails;
-          // If we have an order ID and it matches the current order, use it
+          // If we have an order ID, verify it matches the stored order
           if (!this.orderId || (parsedOrder.orderId === this.orderId)) {
             this.localOrderDetails = parsedOrder;
-            this.loading = false;
+            console.log('Loaded order from localStorage:', this.localOrderDetails);
+          } else {
+            console.warn('Order ID in URL does not match stored order');
+            this.error = 'Order not found. Please check your order confirmation email.';
           }
         } catch (e) {
           console.error('Error parsing order from localStorage:', e);
+          this.error = 'Error loading order details. Please contact support.';
         }
-      }
-      
-      // If we have an order ID, try to fetch the latest order details from the server
-      if (this.orderId) {
-        try {
-          const order = await firstValueFrom(this.orderService.getOrderDetails(this.orderId));
-          if (order) {
-            this.orderDetails = order;
-            // Update local storage with the latest order details
-            localStorage.setItem('lastOrder', JSON.stringify(this.mapToLocalOrderDetails(order)));
-          }
-        } catch (error) {
-          console.error('Error fetching order details:', error);
-          // Don't show error if we already have order details from local storage
-          if (!this.localOrderDetails) {
-            this.error = 'Failed to load order details. Please try again later.';
-          }
-        }
-      } else if (!this.localOrderDetails) {
-        this.error = 'No order details found.';
+      } else {
+        this.error = 'No order details found. Please check your order confirmation email.';
       }
     } catch (error) {
       console.error('Error loading order details:', error);
@@ -105,35 +173,79 @@ export class OrderSummaryComponent implements OnInit {
   }
     // End of previous block (try/catch/finally). No stray or unmatched closing braces.
   
-  private mapToLocalOrderDetails(order: ModelOrderDetails): LocalOrderDetails {
-    return {
-      orderId: order.orderId,
-      items: order.items.map(item => ({
+  private mapToLocalOrderDetails(order: any): LocalOrderDetails {
+    console.log('Mapping order to local details:', order);
+    
+    // Ensure items exist and are properly formatted
+    const items = (order.items || []).map((item: any) => {
+      // Ensure all required fields have default values
+      const mappedItem: any = {
         ...item,
-        frameSize: (item as any).frameSize,
-        product: {
-          name: item.name,
-          price: item.price,
-          imageUrl: item.imageUrl
-        }
-      })),
-      total: order.total || 0,
-      shippingAddress: {
-        ...order.shippingAddress,
-        zipCode: order.shippingAddress.pincode,
-        country: 'India', // Default to India as per the checkout form
-        addressLine1: order.shippingAddress.street,
-        addressLine2: ''
-      },
-      payment: order.payment?.method || 'cod',
-      orderDate: order.orderDate ? (typeof order.orderDate === 'string' ? order.orderDate : order.orderDate.toISOString()) : new Date().toISOString()
+        productId: item.productId || 0,
+        name: item.name || 'Unknown Product',
+        price: Number(item.price) || 0,
+        quantity: Number(item.quantity) || 1,
+        imageUrl: item.imageUrl || 'assets/placeholder-product.jpg',
+        lensPrice: Number(item.lensPrice) || 0,
+        lensName: item.lensName || (item.lensPrice > 0 ? 'Custom Lens' : undefined),
+        frameSize: item.frameSize || null
+      };
+      
+      // Calculate total price for the item
+      mappedItem.totalPrice = (mappedItem.price + (mappedItem.lensPrice || 0)) * mappedItem.quantity;
+      
+      return mappedItem;
+    });
+    
+    // Calculate total if not provided
+    const total = order.total || items.reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0);
+    
+    // Format shipping address
+    const shippingAddress = {
+      name: order.shippingAddress?.name || 'N/A',
+      street: order.shippingAddress?.street || order.shippingAddress?.addressLine1 || 'N/A',
+      city: order.shippingAddress?.city || 'N/A',
+      state: order.shippingAddress?.state || 'N/A',
+      pincode: order.shippingAddress?.pincode || order.shippingAddress?.zipCode || 'N/A',
+      phone: order.shippingAddress?.phone || 'N/A',
+      country: order.shippingAddress?.country || 'India',
+      addressLine1: order.shippingAddress?.street || order.shippingAddress?.addressLine1 || 'N/A',
+      addressLine2: order.shippingAddress?.addressLine2 || ''
     };
-  }
-  
-  continueShopping(): void {
-    this.router.navigate(['/products']);
+    
+    // Format payment method
+    const paymentMethod = order.payment?.method || 'cod';
+    
+    // Format order date
+    let orderDate = new Date().toISOString();
+    if (order.orderDate) {
+      orderDate = typeof order.orderDate === 'string' 
+        ? order.orderDate 
+        : order.orderDate.toISOString ? order.orderDate.toISOString() : new Date(order.orderDate).toISOString();
+    }
+    
+    const mappedOrder: LocalOrderDetails = {
+      orderId: order.orderId || `temp-${Date.now()}`,
+      items,
+      total,
+      shippingAddress,
+      payment: paymentMethod,
+      orderDate
+    };
+    
+    console.log('Mapped order details:', mappedOrder);
+    return mappedOrder;
   }
 
+  // Helper method to get the product image URL
+  getProductImage(item: any): string {
+    if (!item) return 'assets/placeholder-product.jpg';
+    if (item.imageUrl) return item.imageUrl;
+    if (item.image) return item.image;
+    return 'assets/placeholder-product.jpg';
+  }
+
+  // Format price to currency
   formatPrice(price: number | undefined): string {
     const amount = price || 0;
     return new Intl.NumberFormat('en-IN', {
@@ -144,50 +256,51 @@ export class OrderSummaryComponent implements OnInit {
     }).format(amount);
   }
 
+  // Get estimated delivery date
   getEstimatedDeliveryDate(): string {
     const orderDate = this.orderDetails?.orderDate || this.localOrderDetails?.orderDate;
-    if (!orderDate) return '3-5 business days';
+    if (!orderDate) return 'Estimated delivery: 5-7 business days';
     
-    const date = new Date(orderDate);
-    date.setDate(date.getDate() + 3); // 3 days for delivery
+    const deliveryDate = new Date(orderDate);
+    deliveryDate.setDate(deliveryDate.getDate() + 7);
     
-    return date.toLocaleDateString('en-IN', {
+    return `Estimated delivery: ${deliveryDate.toLocaleDateString('en-IN', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric'
-    });
+    })}`;
   }
 
-  // Helper method to get the product image URL
-  getProductImage(product: any): string {
-    if (!product) return 'assets/placeholder-product.jpg';
-    
-    // Handle different product object structures
-    if (typeof product === 'object') {
-      return product.imageUrl || product.image || 'assets/placeholder-product.jpg';
-    }
-    
-    return 'assets/placeholder-product.jpg';
-  }
-  
-  // Helper method to get frame size if available
-  getFrameSize(item: OrderItem | any): string | null {
-    // Check if frameSize exists on the item or its product
-    return item?.frameSize || item?.product?.frameSize || null;
-  }
-
-  // Get the payment method display text
+  // Get payment method display text
   getPaymentMethod(): string {
     const paymentMethod = this.orderDetails?.payment?.method || this.localOrderDetails?.payment || 'cod';
-    return paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment';
+    switch (paymentMethod.toLowerCase()) {
+      case 'cod': return 'Cash on Delivery';
+      case 'card': return 'Credit/Debit Card';
+      case 'upi': return 'UPI Payment';
+      case 'netbanking': return 'Net Banking';
+      default: return 'Payment Method';
+    }
   }
 
-  // Navigate to the track order page
+  // Navigate to track order page
   trackOrder(): void {
     const orderId = this.orderDetails?.orderId || this.localOrderDetails?.orderId;
     if (orderId) {
       this.router.navigate(['/track-order', orderId]);
     }
+  }
+  
+  // Continue shopping
+  continueShopping(): void {
+    this.router.navigate(['/products']);
+  }
+  
+  
+  // Helper method to get frame size if available
+  getFrameSize(item: OrderItem | any): string | null {
+    // Check if frameSize exists on the item or its product
+    return item?.frameSize || item?.product?.frameSize || null;
   }
 }

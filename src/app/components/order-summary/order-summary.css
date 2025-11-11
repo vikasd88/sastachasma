@@ -75,21 +75,22 @@
 
 .order-item {
   display: flex;
-  gap: 1rem;
-  padding: 1rem 0;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.order-item:last-child {
-  border-bottom: none;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .item-image {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 4px;
-  border: 1px solid #e5e7eb;
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin-right: 1.5rem;
+  background: white;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
 }
 
 .item-details {
@@ -97,21 +98,46 @@
 }
 
 .item-details h4 {
-  margin: 0 0 0.5rem 0;
-  color: #111827;
-  font-size: 1rem;
+  margin: 0 0 1rem 0;
+  color: #1e293b;
+  font-size: 1.1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.item-specs {
-  color: #6b7280;
-  font-size: 0.875rem;
-  margin: 0 0 0.5rem 0;
+.item-details h4 .quantity {
+  color: #64748b;
+  font-weight: normal;
+  font-size: 0.9rem;
 }
 
-.item-price {
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.price-row.lens-price {
+  color: #4b5563;
+  padding-left: 1rem;
+  border-left: 2px solid #cbd5e1;
+  margin-left: 0.5rem;
+}
+
+.price-row.item-total {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #cbd5e1;
   font-weight: 600;
-  color: #111827;
-  margin: 0;
+  color: #1e293b;
+}
+
+.item-total strong {
+  color: #1e293b;
+  font-size: 1.1rem;
 }
 
 .order-totals {

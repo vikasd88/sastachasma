@@ -37,8 +37,14 @@
             </div>
           </div>
           <div class="lens-detail">
-            <span *ngIf="item.lensPrice && item.lensPrice > 0">Custom Lens (₹{{ item.lensPrice.toFixed(2) }})</span>
-            <span *ngIf="!item.lensPrice || item.lensPrice === 0">Standard (₹0.00)</span>
+            @if(item.lensPrice && item.lensPrice > 0){
+              <span>Custom Lens (₹{{ item.lensPrice.toFixed(2) }})</span>
+
+            }
+            @else {
+              <span>Standard (₹0.00)</span>
+
+            }
           </div>
           <div class="item-price">₹{{ (item.priceAtAddition + (item.lensPrice || 0)).toFixed(2) }}</div>
           <div class="quantity-control">

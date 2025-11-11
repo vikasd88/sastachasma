@@ -85,16 +85,66 @@ export class CheckoutComponent implements OnInit {
       };
 
       // Place the order using the OrderService
-      const order = await lastValueFrom(
-        this.orderService.placeOrder(orderItems, shippingAddressPayload, this.paymentMethod)
-      );
-
-      // Clear the cart after successful order placement
-      this.cartService.clearCart().subscribe();
-      
-      // Navigate to order summary with order ID
-      this.router.navigate(['/order-summary', order.orderId], { 
-        state: { order: order } 
+      this.orderService.placeOrder(orderItems, shippingAddressPayload, this.paymentMethod).subscribe({
+        next: (order) => {
+          console.log('Order placed successfully:', order);
+          
+          // Create a local order details object to pass to the order summary
+          const localOrder: any = {
+            orderId: order.orderId,
+            items: order.items.map(item => ({
+              ...item,
+              frameSize: item.frameSize || 'standard',
+              product: {
+                name: item.name,
+                price: item.price,
+                imageUrl: item.imageUrl
+              },
+              lensPrice: item.lensPrice || 0,
+              priceAtAddition: item.price // Add this for backward compatibility
+            })),
+            total: order.total,
+            shippingAddress: {
+              ...order.shippingAddress,
+              zipCode: order.shippingAddress.pincode // Map pincode to zipCode if needed
+            },
+            payment: order.payment?.method || 'cod',
+            orderDate: order.orderDate
+          };
+          
+          // Save to local storage first
+          localStorage.setItem('lastOrder', JSON.stringify(localOrder));
+          
+          // Clear the cart after successful order placement
+          this.cartService.clearCart().subscribe({
+            next: () => {
+              console.log('Cart cleared successfully');
+              // Navigate to order summary with order ID and state
+              this.router.navigate(['/order-summary', order.orderId], { 
+                state: { order: localOrder },
+                replaceUrl: true // Replace the current URL in history
+              }).then(success => {
+                if (!success) {
+                  console.error('Navigation failed');
+                  // Fallback to just the order ID if navigation with state fails
+                  this.router.navigate(['/order-summary', order.orderId]);
+                }
+              });
+            },
+            error: (clearError) => {
+              console.error('Error clearing cart:', clearError);
+              // Still navigate to order summary even if cart clearing fails
+              this.router.navigate(['/order-summary', order.orderId], { 
+                state: { order: localOrder } 
+              });
+            }
+          });
+        },
+        error: (error) => {
+          console.error('Error placing order:', error);
+          this.orderError = error.error?.message || 'Failed to place order. Please try again.';
+          this.isPlacingOrder = false;
+        }
       });
       
     } catch (error) {
