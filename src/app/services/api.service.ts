@@ -3,12 +3,13 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { catchError, Observable, of, tap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Lens } from '../models/product.model';
+import { AddToCartRequest } from '../models/cart.model'; // Import AddToCartRequest
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  private apiUrl = environment.apiUrl || 'http://localhost:8081/api';
+  private apiUrl = environment.apiUrl; // Corrected to use the single apiUrl from environment
   private http: HttpClient;
 
   constructor(http: HttpClient) {
@@ -16,144 +17,83 @@ export class ApiService {
   }
 
   // Helper method to get headers with user ID
-  private getHeaders(userId?: number): HttpHeaders {
+  private getHeaders(userId?: string): { headers: HttpHeaders; withCredentials: boolean } { // Changed userId type to string
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'X-User-Id': (userId || environment.defaultUserId).toString()
+      'X-User-Id': (userId || environment.defaultUserId).toString() // Ensure userId is string
     });
-    return headers;
+
+    // Add withCredentials to the request options
+    return { headers, withCredentials: true };
   }
 
   // Product endpoints
   getProducts(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/products`, { 
-      headers: this.getHeaders() 
-    }).pipe(
+    return this.http.get(`${this.apiUrl}/products`, this.getHeaders()).pipe(
       catchError(this.handleError)
     );
   }
 
   getProductById(id: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/products/${id}`, { 
-      headers: this.getHeaders() 
-    }).pipe(
+    return this.http.get(`${this.apiUrl}/products/${id}`, this.getHeaders()).pipe(
       catchError(this.handleError)
     );
   }
 
   getLenses(): Observable<Lens[]> {
-    return this.http.get<Lens[]>(`${this.apiUrl}/lenses`, { 
-      headers: this.getHeaders() 
-    }).pipe(
+    return this.http.get<Lens[]>(`${this.apiUrl}/lenses`, this.getHeaders()).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getLensById(id: number): Observable<Lens | null> { // Added method
+    return this.http.get<Lens>(`${this.apiUrl}/lenses/${id}`, this.getHeaders()).pipe(
       catchError(this.handleError)
     );
   }
 
   // Order endpoints
-  getOrderDetails(orderId: string, userId?: number): Observable<any> {
+  getOrderDetails(orderId: string, userId?: string): Observable<any> { // Changed userId type to string
     if (!orderId) {
       return throwError(() => new Error('Order ID is required'));
     }
-    
-    return this.http.get(`${this.apiUrl}/orders/${orderId}`, {
-      headers: this.getHeaders(userId)
-    }).pipe(
+
+    return this.http.get(`${this.apiUrl}/orders/${orderId}`, this.getHeaders(userId)).pipe(
       catchError(this.handleError)
     );
   }
 
-  // Filter options endpoints
-  getBrands(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.apiUrl}/filters/brands`, {
-      headers: this.getHeaders()
-    }).pipe(
-      catchError(error => {
-        console.warn('Failed to fetch brands, falling back to empty array', error);
-        return of([]);
-      })
-    );
-  }
-
-  getShapes(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.apiUrl}/filters/shapes`, {
-      headers: this.getHeaders()
-    }).pipe(
-      catchError(error => {
-        console.warn('Failed to fetch shapes, falling back to empty array', error);
-        return of([]);
-      })
-    );
-  }
-
-  getColors(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.apiUrl}/filters/colors`, {
-      headers: this.getHeaders()
-    }).pipe(
-      catchError(error => {
-        console.warn('Failed to fetch colors, falling back to empty array', error);
-        return of([]);
-      })
-    );
-  }
+  // Removed filter options endpoints (getBrands, getShapes, getColors)
 
   // Cart endpoints
-  private getCartHeaders(userId: number): HttpHeaders {
-    return this.getHeaders(userId);
-  }
+  // private getCartHeaders(userId: string): HttpHeaders { // Removed as getHeaders can be used directly
+  //   return this.getHeaders(userId);
+  // }
 
-  getCart(userId: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/cart`, {
-      headers: this.getCartHeaders(userId)
-    }).pipe(
+  getCart(userId: string): Observable<any> { // Changed userId type to string
+    return this.http.get(`${this.apiUrl}/cart`, this.getHeaders(userId)).pipe(
       catchError(this.handleError)
     );
   }
 
-  addToCart(userId: number, productId: number, quantity: number, lensId?: number, lensPrice?: any): Observable<any> {
+  addToCart(userId: string, cartItem: AddToCartRequest): Observable<any> { // Changed userId type to string and simplified body
     // Ensure we have a valid user ID
     const userIdValue = userId || environment.defaultUserId;
-    
-    // Create the request body
-    const body: any = { 
-      productId,
-      quantity,
-      lensId: lensId || null, // Send null if lensId is not provided
-    };
-    
-    // Add lensPrice to the request body if provided
-    if (lensPrice !== undefined && lensPrice !== null) {
-      // Convert lensPrice to a number if it's a string or object
-      let priceValue: number;
-      if (typeof lensPrice === 'string') {
-        priceValue = parseFloat(lensPrice);
-      } else if (typeof lensPrice === 'object' && lensPrice !== null) {
-        priceValue = parseFloat(lensPrice.toString());
-      } else {
-        priceValue = Number(lensPrice);
-      }
-      
-      // Only add lensPrice if it's a valid number
-      if (!isNaN(priceValue)) {
-        body.lensPrice = priceValue;
-      } else {
-        console.warn('Invalid lensPrice value:', lensPrice);
-      }
-    }
-    
+
     console.log('Sending addToCart request:', {
       url: `${this.apiUrl}/cart/items`,
       userId: userIdValue,
-      body,
-      headers: this.getCartHeaders(userIdValue)
+      body: cartItem,
+      ...this.getHeaders(userIdValue)
     });
-    
+
     return this.http.post(
       `${this.apiUrl}/cart/items`,
-      body,
+      cartItem,
       {
-        headers: this.getCartHeaders(userIdValue),
-        observe: 'response'
+        observe: 'response',
+        ...this.getHeaders(userIdValue)
       }
     ).pipe(
       tap(response => {
@@ -166,63 +106,53 @@ export class ApiService {
     );
   }
 
-  updateCartItem(userId: number, itemId: number, quantity: number): Observable<any> {
+  updateCartItem(userId: string, itemId: number, quantity: number): Observable<any> { // Changed userId type to string
     const params = new HttpParams().set('quantity', quantity.toString());
-    
+
     return this.http.put(
-      `${this.apiUrl}/cart/items/${itemId}`, 
+      `${this.apiUrl}/cart/items/${itemId}`,
       null,
       {
-        headers: this.getCartHeaders(userId),
-        params: params
+        params: params,
+        ...this.getHeaders(userId)
       }
     ).pipe(
       catchError(this.handleError)
     );
   }
 
-  removeFromCart(userId: number, itemId: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/cart/items/${itemId}`, {
-      headers: this.getCartHeaders(userId)
-    });
+  removeFromCart(userId: string, itemId: number): Observable<void> { // Changed userId type to string
+    return this.http.delete<void>(`${this.apiUrl}/cart/items/${itemId}`, this.getHeaders(userId));
   }
 
-  clearCart(userId: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/cart`, {
-      headers: this.getCartHeaders(userId)
-    });
+  clearCart(userId: string): Observable<void> { // Changed userId type to string
+    return this.http.delete<void>(`${this.apiUrl}/cart`, this.getHeaders(userId));
   }
 
   // Order endpoints
-  placeOrder(userId: number, orderData: any): Observable<any> {
+  placeOrder(userId: string, orderData: any): Observable<any> { // Changed userId type to string
     return this.http.post(
       `${this.apiUrl}/orders`,
       { ...orderData, userId },
-      { 
-        headers: this.getHeaders(userId) 
-      }
+      this.getHeaders(userId)
     ).pipe(
       catchError(this.handleError)
     );
   }
 
-  getOrders(userId: number): Observable<any> {
+  getOrders(userId: string): Observable<any> { // Changed userId type to string
     return this.http.get(
-      `${this.apiUrl}/orders/user/${userId}`, 
-      { 
-        headers: this.getHeaders(userId) 
-      }
+      `${this.apiUrl}/orders/user/${userId}`,
+      this.getHeaders(userId)
     ).pipe(
       catchError(this.handleError)
     );
   }
 
-  getOrder(orderId: string, userId: number): Observable<any> {
+  getOrder(orderId: string, userId: string): Observable<any> { // Changed userId type to string
     return this.http.get(
-      `${this.apiUrl}/orders/${orderId}`, 
-      { 
-        headers: this.getHeaders(userId) 
-      }
+      `${this.apiUrl}/orders/${orderId}`,
+      this.getHeaders(userId)
     ).pipe(
       catchError(this.handleError)
     );
@@ -234,13 +164,11 @@ export class ApiService {
    * @param status The new status to set
    * @returns Observable with the updated order
    */
-  updateOrderStatus(orderId: string, status: string, userId: number): Observable<any> {
+  updateOrderStatus(orderId: string, status: string, userId: string): Observable<any> { // Changed userId type to string
     return this.http.patch(
       `${this.apiUrl}/orders/${orderId}/status`,
       { status },
-      { 
-        headers: this.getHeaders(userId) 
-      }
+      this.getHeaders(userId)
     ).pipe(
       catchError(this.handleError)
     );

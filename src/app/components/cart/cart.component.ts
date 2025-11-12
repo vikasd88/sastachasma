@@ -59,13 +59,13 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   updateQuantity(item: CartItem, newQuantity: number): void {
-    if (!item?.id || !item.product || newQuantity < 1) return;
+    if (!item?.id || newQuantity < 1) return;
     
     const quantity = Number(newQuantity);
     if (isNaN(quantity)) return;
 
     this.loading = true;
-    this.cartService.updateQuantity(Number(item.id), quantity).subscribe({
+    this.cartService.updateQuantity(item.id, quantity).subscribe({
       next: () => {
         this.loadCart();
       },
@@ -78,11 +78,11 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   removeItem(item: CartItem): void {
-    if (!item?.id || !item.product) return;
+    if (!item?.id) return;
 
-    if (confirm(`Are you sure you want to remove ${item.product.name} from your cart?`)) {
+    if (confirm(`Are you sure you want to remove ${item.name} from your cart?`)) {
       this.loading = true;
-      this.cartService.removeFromCart(Number(item.id)).subscribe({
+      this.cartService.removeFromCart(item.id).subscribe({
         next: () => {
           this.loadCart();
         },
@@ -106,7 +106,7 @@ export class CartComponent implements OnInit, OnDestroy {
         },
         error: (error: any) => {
           console.error('Failed to clear cart:', error);
-          this.error = 'Failed to clear cart. Please try again.';
+          this.error = error.error?.message || 'Failed to clear cart. Please try again.';
           this.loading = false;
         }
       });
@@ -120,7 +120,7 @@ export class CartComponent implements OnInit, OnDestroy {
    */
   getItemTotal(item: CartItem): number {
     if (!item) return 0;
-    const itemPrice = (item.priceAtAddition || 0) + (item.lensPrice || 0);
+    const itemPrice = (item.unitPrice || 0) + (item.lensPrice || 0);
     return itemPrice * (item.quantity || 1);
   }
 

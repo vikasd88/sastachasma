@@ -6,14 +6,12 @@ import { TrackOrderComponent } from './components/track-order/track-order';
 import { OrderConfirmationComponent } from './components/order-confirmation/order-confirmation';
 import { ProductListComponent } from './components/product-list/product-list/product-list';
 import { ProductDetailComponent } from './components/product-detail/product-detail/product-detail';
-import { LensCustomizationComponent } from './components/lens-customization/lens-customization/lens-customization';
 import { CheckoutComponent } from './components/checkout/checkout/checkout';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'products', component: ProductListComponent },
   { path: 'products/:id', component: ProductDetailComponent },
-  { path: 'customize/:id', component: LensCustomizationComponent },
   { path: 'cart', component: CartComponent },
   { path: 'checkout', component: CheckoutComponent },
   { path: 'order-summary/:orderId', component: OrderSummaryComponent },

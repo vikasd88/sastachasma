@@ -10,22 +10,20 @@
 
   <div *ngIf="!loading && product" class="product-details-wrapper">
     <div class="product-image-gallery">
-      <img [src]="product.image" [alt]="product.name" class="main-image card" />
+      <img [src]="product.imageUrl" [alt]="product.name" class="main-image card" />
     </div>
 
     <div class="product-info-panel">
       <h1 class="product-name">{{ product.name }}</h1>
-      <p class="product-brand text-muted">{{ product.brand }}</p>
+      <p class="product-brand text-muted">Brand: {{ product.brand }}</p>
 
       <div class="rating-reviews flex">
-        <app-star-rating [rating]="product.rating" [readonly]="true" [showCount]="true" />
-        <span class="text-muted ml-2">({{ product.reviews }} reviews)</span>
+        <app-star-rating [rating]="product.rating" [readonly]="true" [showCount]="false" />
+        <span class="text-muted ml-2">({{ product.rating | number:'1.1-1' }}/5)</span>
       </div>
 
       <div class="price-section mt-3">
-        <span class="current-price text-primary">₹{{ product.price }}</span>
-        <span class="original-price text-muted">₹{{ product.originalPrice }}</span>
-        <span class="discount-badge badge badge-danger ml-2">{{ product.discount }}% OFF</span>
+        <span class="current-price text-primary">₹{{ product.price | number:'1.2-2' }}</span>
       </div>
 
       <div class="description mt-4">
@@ -35,16 +33,37 @@
 
       <div class="specs mt-4 grid grid-2">
         <div><strong>Shape:</strong> {{ product.shape }}</div>
-        <div><strong>Material:</strong> {{ product.material }}</div>
+        <div><strong>Frame Material:</strong> {{ product.frameMaterial }}</div>
         <div><strong>Color:</strong> {{ product.color }}</div>
-        <div><strong>Size:</strong> {{ product.frameSize }}</div>
+        <div><strong>Gender:</strong> {{ product.gender }}</div>
+      </div>
+
+      <div class="lens-selection mt-4" *ngIf="product.category === 'EYEGLASSES' || product.category === 'SUNGLASSES'">
+        <h3>Select Lenses</h3>
+        <select class="form-control" [(ngModel)]="selectedLens" (change)="onLensChange($event)">
+          <option [ngValue]="undefined">No Lenses</option>
+          <option *ngFor="let lens of lenses" [ngValue]="lens">
+            {{ lens.type }} ({{ lens.material }}) - ₹{{ lens.price | number:'1.2-2' }}
+          </option>
+        </select>
+      </div>
+
+      <div class="quantity-selector mt-4">
+        <label for="quantity">Quantity:</label>
+        <input type="number" id="quantity" class="form-control w-25" [(ngModel)]="quantity" min="1" [max]="product.inStock"/>
+        <span *ngIf="product.inStock <= 5" class="text-danger ml-2">Only {{ product.inStock }} left in stock!</span>
       </div>
 
       <div class="action-buttons mt-3">
-        <button class="btn btn-primary btn-lg w-100" (click)="customizeLens()">
-          Select Lenses & Buy
+        <button
+          class="btn btn-primary btn-lg w-100"
+          (click)="addToCart()"
+          [disabled]="product.inStock === 0 || quantity <= 0 || quantity > product.inStock"
+        >
+          Add to Cart
         </button>
+        <p *ngIf="product.inStock === 0" class="text-danger text-center mt-2">Out of Stock</p>
       </div>
-    </div >
+    </div>
   </div>
 </div>

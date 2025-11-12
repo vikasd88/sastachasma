@@ -4,23 +4,23 @@
     <p class="page-subtitle">Enter your order details to check the status of your order</p>
 
     <!-- Order Tracking Form -->
-    <div class="track-form-container" *ngIf="!order?.orderId">
+    <div class="track-form-container" *ngIf="!order?.orderNumber">
       <form [formGroup]="trackForm" (ngSubmit)="onTrackOrder()" class="track-form">
         <div class="form-group">
-          <label for="orderId">Order ID</label>
+          <label for="orderNumber">Order Number</label>
           <input
             type="text"
-            id="orderId"
-            formControlName="orderId"
+            id="orderNumber"
+            formControlName="orderNumber"
             placeholder="e.g. ORD-F3DABG4K"
-            [class.error]="trackForm.get('orderId')?.invalid && trackForm.get('orderId')?.touched"
+            [class.error]="trackForm.get('orderNumber')?.invalid && trackForm.get('orderNumber')?.touched"
             required
           >
-          <div class="error-message" *ngIf="trackForm.get('orderId')?.hasError('required') && trackForm.get('orderId')?.touched">
-            Order ID is required
+          <div class="error-message" *ngIf="trackForm.get('orderNumber')?.hasError('required') && trackForm.get('orderNumber')?.touched">
+            Order Number is required
           </div>
-          <div class="error-message" *ngIf="trackForm.get('orderId')?.hasError('minlength')">
-            Order ID must be at least 3 characters
+          <div class="error-message" *ngIf="trackForm.get('orderNumber')?.hasError('minlength')">
+            Order Number must be at least 3 characters
           </div>
         </div>
 
@@ -73,12 +73,12 @@
     <div class="order-details" *ngIf="order">
       <div class="order-header">
         <div>
-          <h2>Order #{{ order.orderId }}</h2>
+          <h2>Order #{{ order.orderNumber }}</h2>
           <p class="order-date">Placed on {{ formatDate(order.orderDate) }}</p>
         </div>
-        <div class="order-status" [ngClass]="getStatusClass(currentStatus?.status || '')">
-          <i class="fas" [ngClass]="'fa-' + getStatusIcon(currentStatus?.status)"></i>
-          {{ (currentStatus?.status || '') | titlecase }}
+        <div class="order-status" [ngClass]="getStatusClass(order.status || '')">
+          <i class="fas" [ngClass]="'fa-' + getStatusIcon(order.status)"></i>
+          {{ (order.status || '') | titlecase }}
         </div>
       </div>
 
@@ -104,13 +104,21 @@
         <h3>Order Items</h3>
         <div class="items-list">
           <div *ngFor="let item of order.items" class="order-item">
-            <img [src]="item.imageUrl || 'assets/images/placeholder-product.jpg'" [alt]="item.name" class="item-image">
+            <img [src]="getProductImage(item)" [alt]="item.name" class="item-image">
             <div class="item-details">
               <h4>{{ item.name }}</h4>
               <p class="item-quantity">Qty: {{ item.quantity || 1 }}</p>
+              <!-- Lens Details (if available) -->
+              <div *ngIf="item.lensId" class="lens-details">
+                <p><strong>Lens Type:</strong> {{ item.lensType }}</p>
+                <p><strong>Material:</strong> {{ item.lensMaterial }}</p>
+                <p><strong>Prescription:</strong> {{ item.lensPrescriptionRange }}</p>
+                <p><strong>Coating:</strong> {{ item.lensCoating }}</p>
+                <p><strong>Lens Price:</strong> ₹{{ item.lensPrice | currency:'INR':'symbol':'1.2-2' }}</p>
+              </div>
             </div>
             <div class="item-price">
-              ₹{{ (item.price * (item.quantity || 1)) | number:'1.0-0' }}
+              ₹{{ calculateItemSubtotal(item) | currency:'INR':'symbol':'1.2-2' }}
             </div>
           </div>
         </div>
@@ -122,50 +130,51 @@
           <h3>Order Summary</h3>
           <div class="summary-row">
             <span>Subtotal</span>
-            <span>₹{{ getOrderSubtotal() | number:'1.0-0' }}</span>
+            <span>₹{{ order.subtotal | currency:'INR':'symbol':'1.2-2' }}</span>
           </div>
-          <div class="summary-row" *ngIf="order.shippingMethod">
-            <span>Shipping ({{ order.shippingMethod.name || 'Standard' }})</span>
-            <span>₹{{ order.shippingMethod.price | number:'1.0-0' }}</span>
+          <div class="summary-row">
+            <span>Shipping Fee</span>
+            <span>₹{{ order.shippingFee | currency:'INR':'symbol':'1.2-2' }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Tax</span>
+            <span>₹{{ order.tax | currency:'INR':'symbol':'1.2-2' }}</span>
           </div>
           <div class="summary-row total">
             <span>Total</span>
-            <span>₹{{ getOrderTotal() | number:'1.0-0' }}</span>
+            <span>₹{{ order.totalAmount | currency:'INR':'symbol':'1.2-2' }}</span>
           </div>
         </div>
 
-        <div class="summary-section" *ngIf="order.shippingAddress">
-          <h3>Shipping Address</h3>
+        <div class="summary-section">
+          <h3>Billing Address</h3>
           <address>
-            {{ order.shippingAddress.name }}<br>
-            {{ order.shippingAddress.street }}<br>
-            {{ order.shippingAddress.city }}, {{ order.shippingAddress.state }} - {{ order.shippingAddress.pincode }}<br>
-            {{ order.shippingAddress.phone }}
+            {{ order.billingAddress.street }}<br>
+            {{ order.billingAddress.city }}, {{ order.billingAddress.state }} - {{ order.billingAddress.postalCode }}<br>
+            {{ order.billingAddress.country }}<br>
+            Phone: {{ order.billingAddress.phone }}
           </address>
         </div>
 
-        <div class="summary-section" *ngIf="order.payment">
-          <h3>Payment Method</h3>
-          <p>{{ order.payment.method | titlecase }} ({{ order.payment.status | titlecase }})</p>
-          <p *ngIf="order.payment.transactionId">Transaction ID: {{ order.payment.transactionId }}</p>
+        <div class="summary-section">
+          <h3>Payment Information</h3>
+          <p>Method: {{ getPaymentMethod() }}</p>
+          <p>Status: {{ order.paymentStatus | titlecase }}</p>
         </div>
       </div>
 
       <!-- Status Timeline -->
       <div class="status-timeline" *ngIf="order.statusHistory?.length">
-        <h3>Order Status</h3>
+        <h3>Order Status History</h3>
         <div class="timeline">
-          <div *ngFor="let status of order.statusHistory" class="timeline-item">
+          <div *ngFor="let statusEntry of order.statusHistory" class="timeline-item">
             <div class="timeline-marker"></div>
             <div class="timeline-content">
               <div class="timeline-header">
-                <h4>{{ status.status | titlecase }}</h4>
-                <span class="timeline-date">{{ formatDate(status.date) }}</span>
+                <h4>{{ statusEntry.status | titlecase }}</h4>
+                <span class="timeline-date">{{ formatDate(statusEntry.statusDate) }}</span>
               </div>
-              <p>{{ status.description }}</p>
-              <p *ngIf="status.location" class="location">
-                <fa-icon [icon]="faMapMarkerAlt"></fa-icon> {{ status.location }}
-              </p>
+              <p>{{ statusEntry.description }}</p>
             </div>
           </div>
         </div>

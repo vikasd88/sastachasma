@@ -1,12 +1,11 @@
 import { CartItem, Product } from '../models/product.model';
 
-export type OrderStatusType = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
-export type PaymentStatusType = 'pending' | 'completed' | 'failed' | 'refunded';
+export type OrderStatusType = 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'RETURNED';
+export type PaymentStatusType = 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
 
 export interface OrderStatus {
   status: OrderStatusType;
-  date: Date;
-  location?: string;
+  statusDate: Date; // Changed from 'date' to 'statusDate'
   description: string;
 }
 
@@ -14,56 +13,45 @@ export interface OrderStatus {
 // For TrackOrderComponent, OrderItem needs direct properties
 export interface OrderItem {
   productId: number;
-  name: string; // Reverted to name
+  name: string;
   quantity: number;
-  price: number; // Use price as unit price
+  unitPrice: number; // Changed from 'price' to 'unitPrice'
+  totalPrice: number; // Added
   imageUrl?: string;
-  lensId?: string | null;
-  lensName?: string;
+  lensId?: number; // Changed type to number
+  lensType?: string;
+  lensMaterial?: string;
+  lensPrescriptionRange?: string;
+  lensCoating?: string;
   lensPrice?: number;
-  frameSize?: string | number | null;
 }
 
-export interface ShippingAddress {
-  name: string;
+export interface Address {
+  
   street: string;
-  addressLine1?: string;
-  addressLine2?: string;
   city: string;
   state: string;
-  pincode: string;
-  zipCode?: string;
-  phone?: string;
-  country?: string;
+  postalCode: string;
+  country: string;
+  phone: string;
 }
 
-export interface PaymentDetails {
-  method: string;
-  status: PaymentStatusType;
-  amount: number;
-  transactionId?: string;
-  paymentDate?: Date;
-}
-
-export interface ShippingMethod {
-  name: string;
-  price: number;
-  estimatedDays: number;
-}
-
-export interface OrderDetails {
-  orderId: string;
-  customerName: string;
+export interface Order {
+  id: number; // Changed from string to number
+  orderNumber: string; // Added
+  userId: string; // Added
+  fullName: string,
   orderDate: Date;
-  estimatedDelivery?: Date;
+  estimatedDelivery: Date;
   status: OrderStatusType;
-  items: OrderItem[]; // Changed to OrderItem[]
+  paymentStatus: PaymentStatusType; // Added, replacing payment object
+  items: OrderItem[];
   statusHistory: OrderStatus[];
-  shippingAddress: ShippingAddress;
-  payment: PaymentDetails;
-  total: number;
-  shippingMethod?: ShippingMethod;
-  discount?: number;
+  billingAddress: Address; // Changed from shippingAddress to billingAddress
+  subtotal: number; // Added
+  shippingFee: number; // Added
+  tax: number; // Added
+  totalAmount: number; // Changed from 'total' to 'totalAmount'
 }
 
 export interface OrderRequest {
@@ -92,4 +80,32 @@ export interface OrderRequest {
   };
   payment: PaymentDetails;
   userId: number;
+}
+
+export interface PaymentDetails {
+  method: string;
+  status: PaymentStatusType;
+  amount: number;
+  transactionId?: string;
+  paymentDate?: Date;
+}
+
+export interface ShippingMethod {
+  name: string;
+  price: number;
+  estimatedDays: number;
+}
+
+export interface PlaceOrderRequest {
+  paymentMethod: string; // Added
+  billingAddress: Address; // Using the new Address interface
+  items: Array<{
+    productId: number;
+    quantity: number;
+    lensId?: number;
+    lensType?: string;
+    lensMaterial?: string;
+    lensPrescriptionRange?: string;
+    lensCoating?: string;
+  }>;
 }

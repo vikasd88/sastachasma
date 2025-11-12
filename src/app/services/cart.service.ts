@@ -40,10 +40,7 @@ export class CartService {
 
     return this.apiService.addToCart(
       environment.defaultUserId,
-      item.productId,
-      item.quantity,
-      item.lensId,
-      item.lensPrice
+      item // Pass the entire item object
     ).pipe(
       tap((response: any) => {
         try {
@@ -82,48 +79,33 @@ export class CartService {
     
     return backendItems.map(item => {
       // Convert prices to numbers to ensure consistency
-      const productPrice = Number(item.priceAtAddition) || 0;
+      const unitPrice = Number(item.unitPrice) || 0; // Changed from priceAtAddition
       const lensPrice = item.lensPrice ? Number(item.lensPrice) : 0;
-      const totalPrice = (productPrice + lensPrice) * (Number(item.quantity) || 1);
+      const totalPrice = (unitPrice + lensPrice) * (Number(item.quantity) || 1); // Use unitPrice
       
-      console.log('Mapping cart item:', { 
-        item, 
-        productPrice, 
-        lensPrice, 
+      console.log('Mapping cart item:', {
+        item,
+        unitPrice,
+        lensPrice,
         calculatedTotal: totalPrice,
         quantity: item.quantity
       });
       
       return {
         id: item.id,
-        product: {
-          id: item.productId,
-          name: item.productName || 'Unknown Product',
-          price: productPrice,
-          // Add default values for required product properties
-          brand: '',
-          originalPrice: productPrice,
-          discount: 0,
-          rating: item.productRating || 0,
-          reviews: 0,
-          // Use item.imageUrl if available, otherwise use a default image
-          image: item.imageUrl || 'assets/placeholder-product.jpg',
-          imageUrl: item.imageUrl || 'assets/placeholder-product.jpg',
-          description: item.description || '',
-          shape: '',
-          frameMaterial: '',
-          material: '',
-          lensType: '',
-          color: item.color || '',
-          frameSize: '',
-          inStock: true
-        },
-        quantity: Number(item.quantity) || 1,
-        priceAtAddition: productPrice,
+        productId: item.productId,
+        name: item.name || 'Unknown Product',
+        price: Number(item.price) || 0, // Ensure price is number
+        imageUrl: item.imageUrl || 'assets/placeholder-product.jpg',
+        lensId: item.lensId,
+        lensType: item.lensType,
+        lensMaterial: item.lensMaterial,
+        lensPrescriptionRange: item.lensPrescriptionRange,
+        lensCoating: item.lensCoating,
         lensPrice: lensPrice,
+        quantity: Number(item.quantity) || 1,
+        unitPrice: unitPrice,
         totalPrice: totalPrice,
-        productName: item.productName || 'Unknown Product',
-        productRating: item.productRating || 0
       };
     });
   }
@@ -214,14 +196,14 @@ export class CartService {
     }
     
     return this.cartItems.reduce((total, item) => {
-      if (!item || !item.product) {
+      if (!item) {
         console.warn('Invalid cart item found:', item);
         return total;
       }
       
-      const productPrice = item.priceAtAddition || 0;
+      const unitPrice = item.unitPrice || 0;
       const lensPrice = item.lensPrice || 0;
-      const itemPrice = productPrice + lensPrice;
+      const itemPrice = unitPrice + lensPrice;
       const itemTotal = itemPrice * (item.quantity || 1);
       
       return total + itemTotal;
@@ -237,7 +219,7 @@ export class CartService {
     this.loading = true;
     return this.apiService.updateCartItem(environment.defaultUserId, itemId, quantity).pipe(
       tap((updatedItem: CartItem) => {
-        const index = this.cartItems.findIndex(item => parseInt(item.id as string) === itemId);
+        const index = this.cartItems.findIndex(item => item.id === itemId);
         if (index !== -1) {
           this.cartItems[index] = { ...this.cartItems[index], quantity };
           this.updateCart();
@@ -254,7 +236,7 @@ export class CartService {
     this.loading = true;
     return this.apiService.removeFromCart(environment.defaultUserId, itemId).pipe(
       tap(() => {
-        this.cartItems = this.cartItems.filter(item => parseInt(item.id as string) !== itemId);
+        this.cartItems = this.cartItems.filter(item => item.id !== itemId);
         this.updateCart();
       }),
       catchError(this.handleError<void>('removeFromCart')),

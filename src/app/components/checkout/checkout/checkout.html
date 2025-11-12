@@ -11,18 +11,16 @@
       <h3 class="card-header">1. Shipping Information</h3>
       <div class="card-body">
         <form>
-          <div class="form-group">
+          <!-- Removed Full Name, using just street, city, state, postalCode, country, phone -->
+          <div>
             <label for="fullName">Full Name</label>
-            <input type="text" id="fullName" [(ngModel)]="shippingAddress.fullName" name="fullName" required />
+            <input type="text" id="fullName" [(ngModel)]="fullName" name="fullName" required />
           </div>
           <div class="form-group">
-            <label for="addressLine1">Address Line 1</label>
-            <input type="text" id="addressLine1" [(ngModel)]="shippingAddress.addressLine1" name="addressLine1" required />
+            <label for="street">Street Address</label>
+            <input type="text" id="street" [(ngModel)]="shippingAddress.street" name="street" required />
           </div>
-          <div class="form-group">
-            <label for="addressLine2">Address Line 2 (Optional)</label>
-            <input type="text" id="addressLine2" [(ngModel)]="shippingAddress.addressLine2" name="addressLine2" />
-          </div>
+
           <div class="grid grid-3">
             <div class="form-group">
               <label for="city">City</label>
@@ -33,13 +31,17 @@
               <input type="text" id="state" [(ngModel)]="shippingAddress.state" name="state" required />
             </div>
             <div class="form-group">
-              <label for="zipCode">Zip Code</label>
-              <input type="text" id="zipCode" [(ngModel)]="shippingAddress.zipCode" name="zipCode" required />
+              <label for="postalCode">Postal Code</label>
+              <input type="text" id="postalCode" [(ngModel)]="shippingAddress.postalCode" name="postalCode" required />
             </div>
           </div>
           <div class="form-group">
             <label for="country">Country</label>
-            <input type="text" id="country" [(ngModel)]="shippingAddress.country" name="country" disabled />
+            <input type="text" id="country" [(ngModel)]="shippingAddress.country" name="country" required />
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="text" id="phone" [(ngModel)]="shippingAddress.phone" name="phone" required />
           </div>
         </form>
       </div>
@@ -66,23 +68,23 @@
         <div class="card-body">
           <div *ngFor="let item of cartItems" class="order-item mb-3">
             <div class="flex-between mb-1">
-              <span class="product-name">{{ item.product.name }} x {{ item.quantity }}</span>
-              <span class="product-price">₹{{ (item.priceAtAddition * item.quantity).toFixed(2) }}</span>
+              <span class="product-name">{{ item.name }} x {{ item.quantity }}</span>
+              <span class="product-price">₹{{ (item.unitPrice * item.quantity).toFixed(2) }}</span>
             </div>
-            <div *ngIf="item.lensPrice && item.lensPrice > 0" class="lens-detail mb-1">
+            <div *ngIf="item.lensId" class="lens-detail mb-1">
               <div class="flex-between">
-                <span class="text-muted">• Custom Lens x {{ item.quantity }}</span>
-                <span class="text-muted">₹{{ (item.lensPrice * item.quantity).toFixed(2) }}</span>
+                <span class="text-muted">• {{ item.lensType }} Lens x {{ item.quantity }}</span>
+                <span class="text-muted">₹{{ (item.lensPrice || 0 * item.quantity).toFixed(2) }}</span>
               </div>
             </div>
             <div class="flex-between border-top pt-1">
               <strong>Item Total</strong>
-              <strong>₹{{ ((item.priceAtAddition + (item.lensPrice || 0)) * item.quantity).toFixed(2) }}</strong>
+              <strong>₹{{ ((item.unitPrice + (item.lensPrice || 0)) * item.quantity).toFixed(2) }}</strong>
             </div>
           </div>
           <div class="flex-between mt-3 pt-3 border-top">
             <span>Subtotal:</span>
-            <span>₹{{ cartTotal }}</span>
+            <span>₹{{ cartTotal.toFixed(2) }}</span>
           </div>
           <div class="flex-between mb-2">
             <span>Shipping:</span>
@@ -90,7 +92,7 @@
           </div>
           <div class="flex-between total-row mt-3">
             <h3>Total:</h3>
-            <h3 class="text-primary">₹{{ cartTotal }}</h3>
+            <h3 class="text-primary">₹{{ cartTotal.toFixed(2) }}</h3>
           </div>
         </div>
         <div class="card-footer">

@@ -4,10 +4,11 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } 
 import { Router, ActivatedRoute } from '@angular/router';
 import { OrderService } from '../../services/order.service';
 import { finalize } from 'rxjs/operators';
-import { OrderDetails, OrderStatus, OrderStatusType } from '../../models/order.model';
+import { Order, OrderStatus, OrderStatusType } from '../../models/order.model'; // Updated imports
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { IconDefinition, faSpinner, faCheckCircle, faTruck, faClock, faTimesCircle, faSearch, faHeadset, faPrint, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
 import { CartItem } from '../../models/product.model'; // Corrected import
+import { OrderItem } from '../../models/order.model'; // Added import for OrderItem
 
 @Component({
   selector: 'app-track-order',
@@ -37,12 +38,12 @@ export class TrackOrderComponent implements OnInit {
   // Component state
   trackForm: FormGroup;
   isLoading = false;
-  error: string | null = null; // Renamed from errorMessage
-  order: OrderDetails | null = null;
+  error: string | null = null;
+  order: Order | null = null; // Changed to Order type
   currentStatus: OrderStatus | null = null;
 
   // Order status tracking
-  readonly statuses = ['processing', 'shipped', 'delivered', 'cancelled'] as const;
+  readonly statuses = ['PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'] as const; // Changed to uppercase
 
   // Inject services
   private readonly fb = inject(FormBuilder);
@@ -52,7 +53,7 @@ export class TrackOrderComponent implements OnInit {
 
   constructor() {
     this.trackForm = this.fb.group({
-      orderId: ['', [Validators.required, Validators.minLength(3)]],
+      orderNumber: ['', [Validators.required, Validators.minLength(3)]], // Changed orderId to orderNumber
       email: ['', [Validators.required, Validators.email]]
     });
   }
@@ -63,11 +64,11 @@ export class TrackOrderComponent implements OnInit {
 
   private checkRouteParams(): void {
     this.route.queryParams.subscribe(params => {
-      const orderId = params['orderId'];
+      const orderNumber = params['orderNumber']; // Changed orderId to orderNumber
       const email = params['email'];
 
-      if (orderId) {
-        this.trackForm.patchValue({ orderId });
+      if (orderNumber) {
+        this.trackForm.patchValue({ orderNumber }); // Changed orderId to orderNumber
 
         if (email) {
           this.trackForm.patchValue({ email });
@@ -84,27 +85,27 @@ export class TrackOrderComponent implements OnInit {
     }
 
     this.isLoading = true;
-    this.error = null; // Renamed from errorMessage
+    this.error = null;
 
-    const { orderId, email } = this.trackForm.value;
+    const { orderNumber, email } = this.trackForm.value; // Changed orderId to orderNumber
 
-    this.orderService.getOrderDetails(orderId)
+    this.orderService.getOrderDetails(orderNumber) // Changed orderId to orderNumber
       .pipe(
         finalize(() => this.isLoading = false)
       )
       .subscribe({
-        next: (order:any) => {
+        next: (order: Order) => { // Changed order:any to order:Order
           if (order) {
             this.order = order;
             this.currentStatus = this.getLatestStatus(order.statusHistory);
-            this.updateUrl(orderId, email);
+            this.updateUrl(order.orderNumber, email); // Changed orderId to order.orderNumber
           } else {
-            this.error = 'Order not found. Please check your details and try again.'; // Renamed from errorMessage
+            this.error = 'Order not found. Please check your details and try again.';
           }
         },
-        error: (err:any) => {
+        error: (err: any) => {
           console.error('Error tracking order:', err);
-          this.error = err?.message || 'Failed to track order. Please try again.'; // Renamed from errorMessage
+          this.error = err?.message || 'Failed to track order. Please try again.';
         }
       });
   }
@@ -114,16 +115,16 @@ export class TrackOrderComponent implements OnInit {
 
     // Make a copy before sorting to avoid mutating the original array
     const sorted = [...statusHistory].sort((a, b) => {
-      const dateA = new Date(a.date).getTime();
-      const dateB = new Date(b.date).getTime();
+      const dateA = new Date(a.statusDate).getTime(); // Changed a.date to a.statusDate
+      const dateB = new Date(b.statusDate).getTime(); // Changed b.date to b.statusDate
       return dateB - dateA;
     });
 
     return sorted[0] || null;
   }
 
-  private updateUrl(orderId: string, email: string): void {
-    const queryParams: { orderId: string; email?: string } = { orderId };
+  private updateUrl(orderNumber: string, email: string): void { // Changed orderId to orderNumber
+    const queryParams: { orderNumber: string; email?: string } = { orderNumber }; // Changed orderId to orderNumber
     if (email) {
       queryParams.email = email;
     }
@@ -158,10 +159,10 @@ export class TrackOrderComponent implements OnInit {
     if (statusLower.includes('shipped')) return 'truck';
     if (statusLower.includes('process')) return 'spinner';
     if (statusLower.includes('cancel')) return 'times-circle';
-    
+
     return 'clock';
   }
-  
+
   // Helper to get the actual icon component
   getStatusFaIcon(status: string | undefined): IconDefinition {
     if (!status) return faClock;
@@ -196,8 +197,8 @@ export class TrackOrderComponent implements OnInit {
   isStatusActive(status: string | undefined): boolean {
     if (!status || !this.currentStatus?.status) return false;
 
-    const currentStatus = this.currentStatus.status.toLowerCase();
-    const checkStatus = status.toLowerCase();
+    const currentStatus = this.currentStatus.status.toUpperCase(); // Changed toUpperCase
+    const checkStatus = status.toUpperCase(); // Changed toUpperCase
 
     // If status is the same as current status
     if (currentStatus === checkStatus) return true;
@@ -212,8 +213,8 @@ export class TrackOrderComponent implements OnInit {
   isStatusCompleted(status: string | undefined): boolean {
     if (!status || !this.currentStatus?.status) return false;
 
-    const currentStatus = this.currentStatus.status.toLowerCase();
-    const checkStatus = status.toLowerCase();
+    const currentStatus = this.currentStatus.status.toUpperCase(); // Changed toUpperCase
+    const checkStatus = status.toUpperCase(); // Changed toUpperCase
 
     // If checking the current status, it's not completed yet
     if (currentStatus === checkStatus) return false;
@@ -227,32 +228,22 @@ export class TrackOrderComponent implements OnInit {
 
   getOrderSubtotal(): number {
     if (!this.order?.items) return 0;
-    return this.order.items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    return this.order.items.reduce((acc, item) => acc + ((item.unitPrice || 0) * (item.quantity || 1)) + (item.lensPrice || 0), 0); // Updated to unitPrice and lensPrice
   }
 
   getOrderTotal(): number {
     if (!this.order) return 0;
-    let total = this.getOrderSubtotal();
-    // Add shipping cost if applicable
-    if (this.order.shippingMethod) {
-      total += this.order.shippingMethod.price;
-    }
-    // Apply discount if applicable
-    if (this.order.discount) {
-      total -= this.order.discount;
-    }
-    return total;
+    return this.order.totalAmount || 0; // Use totalAmount directly
   }
 
-  getStatusLocation(status: string): string {
-    if (!this.order?.statusHistory?.length) return '';
-
-    const statusEntry = this.order.statusHistory.find(
-      (s: OrderStatus) => s.status.toLowerCase() === status.toLowerCase()
-    );
-
-    return statusEntry?.location || '';
-  }
+  // Removed getStatusLocation
+  // getStatusLocation(status: string): string {
+  //   if (!this.order?.statusHistory?.length) return '';
+  //   const statusEntry = this.order.statusHistory.find(
+  //     (s: OrderStatus) => s.status.toLowerCase() === status.toLowerCase()
+  //   );
+  //   return statusEntry?.location || '';
+  // }
 
   printOrder(): void {
     window.print();
@@ -260,7 +251,22 @@ export class TrackOrderComponent implements OnInit {
 
   contactSupport(): void {
     this.router.navigate(['/contact'], {
-      queryParams: { subject: `Order Inquiry - ${this.order?.orderId || ''}` }
+      queryParams: { subject: `Order Inquiry - ${this.order?.orderNumber || ''}` } // Changed orderId to orderNumber
     });
+  }
+
+  getProductImage(item: OrderItem): string {
+    return item.imageUrl || '/assets/images/placeholder.jpg'; // Provide a placeholder image
+  }
+
+  calculateItemSubtotal(item: OrderItem): number {
+    return ((item.unitPrice || 0) * (item.quantity || 1)) + (item.lensPrice || 0);
+  }
+
+  getPaymentMethod(): string {
+    if (!this.order?.paymentStatus) return 'N/A';
+    // Assuming paymentStatus can be mapped to a human-readable method
+    // For now, return the status directly. In a real app, you might have a dedicated paymentMethod field.
+    return this.order.paymentStatus;
   }
 }

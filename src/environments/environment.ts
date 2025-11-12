@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://sastachasma-backend-1.onrender.com/api',//'http://localhost:8081/api', // Your Spring Boot backend URL
-  defaultUserId: 1 // Default user ID for development
+  apiUrl: 'http://localhost:8085/api', // Consolidated and corrected to API Gateway's port and base path
+  defaultUserId: "1" // Default user ID for development
 };

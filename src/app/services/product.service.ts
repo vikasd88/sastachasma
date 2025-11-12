@@ -10,7 +10,7 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class ProductService {
-  private apiUrl = environment.apiUrl || 'http://localhost:8081/api';
+  private apiUrl = environment.apiUrl || 'http://localhost:8080/api'; // Changed to API Gateway port 8080
   private products = new BehaviorSubject<Product[]>([]);
   private lenses = new BehaviorSubject<Lens[]>([]);
   loading: boolean = true;
@@ -28,18 +28,19 @@ export class ProductService {
   public readonly loading$ = new BehaviorSubject<boolean>(false);
   public readonly error$ = new BehaviorSubject<string | null>(null);
 
-  constructor(private http: HttpClient,private apiService: ApiService) {
+  constructor(private http: HttpClient, private apiService: ApiService) {
     this.loadData();
   }
 
   private loadData(): void {
     this.loading = true;
     
-    this.http.get<Product[]>(`${this.apiUrl}/products`).pipe(
+    // Use apiService to fetch products
+    this.apiService.getProducts().pipe(
       tap((response: any) => {
         // Handle both array and object responses
-        const products = Array.isArray(response) ? response : 
-                       (response.products || Object.values(response));
+        const products = Array.isArray(response) ? response :
+          (response.products || Object.values(response));
         
         if (!products || !Array.isArray(products)) {
           throw new Error('Invalid products data received from API');
@@ -49,7 +50,7 @@ export class ProductService {
           ...product,
           image: product.image || product.imageUrl || 'assets/images/default-product.png',
           material: product.material || product.frameMaterial || 'Not specified',
-          inStock: product.inStock !== undefined ? product.inStock : true
+          inStock: product.inStock !== undefined ? product.inStock : 0 // Changed to 0, as inStock is a number now
         }));
         
         this.products.next(processedProducts);
@@ -70,13 +71,9 @@ export class ProductService {
    * Get products observable
    * Components should subscribe to this to get the latest products
    */
-  /**
-   * Get products observable
-   * Components should subscribe to this to get the latest products
-   */
   getProducts(): Observable<Product[]> {
     // If products are empty and not currently loading, trigger a load
-    if (this.products.value.length === 0 && !this.loading$) {
+    if (this.products.value.length === 0 && !this.loading$.value) { // Access loading$ value
       this.loadProducts();
     }
     return this.products$;
@@ -101,7 +98,7 @@ export class ProductService {
     }
 
     // If not in cache, fetch from API
-    this.loading = true;
+    this.loading$.next(true); // Update loading$ subject
     return this.apiService.getProductById(id).pipe(
       map(response => response as Product),
       tap({
@@ -110,18 +107,18 @@ export class ProductService {
           if (product && !this.products.value.some(p => p.id === product.id)) {
             this.products.next([...this.products.value, product]);
           }
-          this.error = null;
+          this.error$.next(null); // Update error$ subject
         },
         error: (error) => {
           console.error(`Error loading product ${id}:`, error);
-          this.error = `Failed to load product ${id}`;
+          this.error$.next(`Failed to load product ${id}`); // Update error$ subject
         }
       }),
       catchError(error => {
         console.error('API Error:', error);
         return of(undefined);
       }),
-      finalize(() => this.loading = false)
+      finalize(() => this.loading$.next(false)) // Update loading$ subject
     );
   }
 
@@ -213,8 +210,9 @@ export class ProductService {
       return of(existingLens);
     }
     
-    // If not found, try to load it from the API
-    return this.http.get<Lens>(`${this.apiUrl}/lenses/${id}`).pipe(
+    // If not found, try to load it from the API using apiService
+    return this.apiService.getLensById(id).pipe(
+      map(lens => lens || undefined), // Map null to undefined
       tap(lens => {
         if (lens) {
           this.lensCache.set(id, lens);
@@ -225,10 +223,6 @@ export class ProductService {
   }
 
   /**
-   * Load lenses from the API
-   * @private
-   */
-  /**
    * Load products from the API
    * @private
    */
@@ -238,14 +232,15 @@ export class ProductService {
     this.loading$.next(true);
     this.error$.next(null);
     
-    this.http.get<{ products: Product[] }>(`${this.apiUrl}/products`).pipe(
-      map(response => response.products || []),
+    // Use apiService to fetch products
+    this.apiService.getProducts().pipe(
+      map(response => response || []),
       tap(products => {
-        const processedProducts = products.map(product => ({
+        const processedProducts = products.map((product: Product) => ({ // Explicitly type product
           ...product,
-          image: product.image || product.imageUrl || 'assets/images/default-product.png',
-          material: product.material || product.frameMaterial || 'Not specified',
-          inStock: product.inStock !== undefined ? product.inStock : true
+          imageUrl: product.imageUrl || 'assets/images/default-product.png', // Changed 'image' to 'imageUrl'
+          frameMaterial: product.frameMaterial || 'Not specified',
+          inStock: product.inStock !== undefined ? product.inStock : 0
         }));
         
         this.products.next(processedProducts);

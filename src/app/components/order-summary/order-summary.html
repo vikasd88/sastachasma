@@ -2,7 +2,7 @@
   <!-- Show server order details if available, otherwise show local order details -->
   <div class="order-summary">
     <ng-container *ngIf="!loading; else loadingTemplate">
-      <div *ngIf="activeOrderDetails; else errorTemplate">
+      <div *ngIf="orderDetails; else errorTemplate"> <!-- Changed activeOrderDetails to orderDetails -->
         <div class="order-confirmation">
           <div class="success-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -11,9 +11,9 @@
             </svg>
           </div>
           <h1>Order Confirmed!</h1>
-          <p class="order-id">Order #{{ activeOrderDetails.orderId }}</p>
+          <p class="order-id">Order #{{ orderDetails.orderNumber }}</p> <!-- Changed orderId to orderNumber -->
           <p class="confirmation-message">Thank you for your purchase. We've received your order and it's being processed.</p>
-          
+
           <div class="delivery-info">
             <h3>Estimated Delivery</h3>
             <p class="delivery-date">{{ getEstimatedDeliveryDate() }}</p>
@@ -23,37 +23,27 @@
         <div class="order-details">
           <h2>Order Summary</h2>
           <div class="order-items">
-            <div class="order-item" *ngFor="let item of activeOrderDetails.items">
+            <div class="order-item" *ngFor="let item of orderDetails.items"> <!-- Changed activeOrderDetails to orderDetails -->
               <div class="item-image-container">
-                <img [src]="getProductImage(item)" [alt]="item.name" class="item-image" (error)="$event.target.src=getProductImage(null)">
+                <img [src]="getProductImage(item)" [alt]="item.name" class="item-image" (error)="$event.target.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNEOEQ4RDgiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgo8cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIiByeT0iMiI+PC9yZWN0Pgo8Y2lyY2xlIGN4PSI4LjUiIGN5PSI4LjUiIHI9IjEuNSI+PC9jaXJjbGU+Cjxwb2x5bGluZSBwb2ludHM9IjIxIDE1IDE2IDEwIDUgMjEiPjwvc3ZnPg=='"/> <!-- Updated error fallback -->
                 <span class="item-quantity" *ngIf="item.quantity > 1">{{ item.quantity }}</span>
               </div>
               <div class="item-details">
                 <h4>{{ item.name || 'Unknown Product' }}</h4>
-                
-                <!-- Frame Size (if available) -->
-                <div *ngIf="item.frameSize || getFrameSize(item)" class="frame-size">
-                  <span>Frame Size: {{ item.frameSize || getFrameSize(item) || 'N/A' }}</span>
+
+                <!-- Lens Details (if available) -->
+                <div *ngIf="item.lensId" class="lens-details">
+                  <p><strong>Lens Type:</strong> {{ item.lensType }}</p>
+                  <p><strong>Material:</strong> {{ item.lensMaterial }}</p>
+                  <p><strong>Prescription:</strong> {{ item.lensPrescriptionRange }}</p>
+                  <p><strong>Coating:</strong> {{ item.lensCoating }}</p>
+                  <p><strong>Lens Price:</strong> ₹{{ item.lensPrice | currency:'INR':'symbol':'1.2-2' }}</p>
                 </div>
-                
-                <!-- Frame Price -->
-                <div class="price-details">
-                  <div class="price-row">
-                    <span class="price-label">Frame ({{ item.quantity }} × {{ formatPrice(item.price || 0) }})</span>
-                    <span class="price-amount">{{ formatPrice((item.price || 0) * item.quantity) }}</span>
-                  </div>
-                  
-                 <!-- Lens Price (if applicable) -->
-                  <div *ngIf="item.lensPrice && item.lensPrice > 0" class="price-row">
-                    <span class="price-label">{{ item.lensName || 'Custom Lens' }} ({{ item.quantity }} × {{ formatPrice(item.lensPrice) }})</span>
-                    <span class="price-amount">+ {{ formatPrice((item.lensPrice || 0) * (item.quantity || 1)) }}</span>
-                  </div>
-                  
-                  <!-- Item Total -->
-                  <div class="price-row item-total">
-                    <strong>Item Total</strong>
-                    <strong>{{ formatPrice(((item.price || 0) * item.quantity) + ((item.lensPrice || 0) * (item.quantity || 1))) }}</strong>
-                  </div>
+
+                <!-- Item Total -->
+                <div class="price-row item-total">
+                  <strong>Item Total</strong>
+                  <strong>₹{{ calculateItemSubtotal(item) | currency:'INR':'symbol':'1.2-2' }}</strong>
                 </div>
               </div>
             </div>
@@ -61,37 +51,35 @@
 
           <div class="order-totals">
             <div class="total-row">
-              <span>Subtotal ({{ activeOrderDetails.items.length || 0 }} items)</span>
-              <span>{{ formatPrice(calculateOrderSubtotal()) }}</span>
+              <span>Subtotal ({{ orderDetails.items.length || 0 }} items)</span> <!-- Changed activeOrderDetails to orderDetails -->
+              <span>₹{{ orderDetails.subtotal | currency:'INR':'symbol':'1.2-2' }}</span> <!-- Changed calculateOrderSubtotal() to orderDetails.subtotal -->
             </div>
             <div class="total-row">
-              <span>Shipping</span>
-              <span>FREE</span>
+              <span>Shipping Fee</span> <!-- Changed to Shipping Fee -->
+              <span>₹{{ orderDetails.shippingFee | currency:'INR':'symbol':'1.2-2' }}</span> <!-- Changed to orderDetails.shippingFee -->
+            </div>
+            <div class="total-row">
+              <span>Tax</span>
+              <span>₹{{ orderDetails.tax | currency:'INR':'symbol':'1.2-2' }}</span> <!-- Changed to orderDetails.tax -->
             </div>
             <div class="total-row grand-total">
               <span>Total Amount</span>
-              <span>{{ formatPrice(activeOrderDetails.total) }}</span>
+              <span>₹{{ orderDetails.totalAmount | currency:'INR':'symbol':'1.2-2' }}</span> <!-- Changed activeOrderDetails.total to orderDetails.totalAmount -->
             </div>
           </div>
 
           <div class="shipping-details">
             <div class="shipping-address">
-              <h3>Shipping Address</h3>
-              <p>{{ activeOrderDetails.shippingAddress.name }}</p>
-              <p>{{ activeOrderDetails.shippingAddress.street }}</p>
-              <p *ngIf="activeOrderDetails.shippingAddress.addressLine1 && activeOrderDetails.shippingAddress.addressLine1 !== activeOrderDetails.shippingAddress.street">{{ activeOrderDetails.shippingAddress.addressLine1 }}</p>
-              <p *ngIf="activeOrderDetails.shippingAddress.addressLine2">{{ activeOrderDetails.shippingAddress.addressLine2 }}</p>
-              <p>{{ activeOrderDetails.shippingAddress.city }}, {{ activeOrderDetails.shippingAddress.state }} {{ activeOrderDetails.shippingAddress.pincode }}</p>
-              <p *ngIf="activeOrderDetails.shippingAddress.country">{{ activeOrderDetails.shippingAddress.country }}</p>
-              <p *ngIf="activeOrderDetails.shippingAddress.phone">Phone: {{ activeOrderDetails.shippingAddress.phone }}</p>
+              <h3>Billing Address</h3> <!-- Changed to Billing Address -->
+              <p>{{ orderDetails.billingAddress.street }}</p>
+              <p>{{ orderDetails.billingAddress.city }}, {{ orderDetails.billingAddress.state }} {{ orderDetails.billingAddress.postalCode }}</p>
+              <p>{{ orderDetails.billingAddress.country }}</p>
+              <p>Phone: {{ orderDetails.billingAddress.phone }}</p>
             </div>
             <div class="payment-method">
               <h3>Payment Information</h3>
               <p>Method: {{ getPaymentMethod() }}</p>
-              <p>Status: {{ activeOrderDetails.payment.status }}</p>
-              <p *ngIf="activeOrderDetails.payment?.transactionId">
-                Transaction ID: {{ activeOrderDetails.payment.transactionId || 'N/A' }}
-              </p>
+              <p>Status: {{ orderDetails.paymentStatus }}</p>
             </div>
           </div>
 

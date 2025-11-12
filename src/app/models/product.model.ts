@@ -3,60 +3,53 @@ export interface Product {
   name: string;
   brand: string;
   price: number;
-  originalPrice: number;
-  discount: number;
   rating: number;
-  reviews: number;
-  image: string;  // Changed from imageUrl to match template
-  imageUrl: string; // Keep for backward compatibility
+  imageUrl: string;
   description: string;
   shape: string;
   frameMaterial: string;
-  material: string; // Added for product detail page
   lensType: string;
   color: string;
-  frameSize: string;
-  inStock: boolean;
+  gender: string;
+  category: string; // Re-added category
+  inStock: number; // Changed from boolean to number to match backend DTO
+  isActive: boolean;
 }
 
 export interface Lens {
   id: number;
   type: string;
+  material: string;
   price: number;
-  description: string;
-  name: string;
+  prescriptionRange: string;
+  coating: string;
+  inStock: number;
+  isActive: boolean;
 }
 
-// Frontend cart item with full product details
+// Frontend cart item without full product or lens details (these will be fetched separately if needed)
 export interface CartItem {
-  id: number | string;
-  product: Product;
-  lens?: Lens;
-  quantity: number;
-  priceAtAddition: number;
-  lensPrice?: number; // Add lensPrice to the interface
-  totalPrice: number;
-  productName: string;
-  productRating?: number | null;
-  frameSize?: number | null;
-}
-
-// Backend cart item DTO
-export interface BackendCartItem {
   id: number;
   productId: number;
-  productName: string;
+  name: string;
+  price: number;
+  imageUrl: string;
+  lensId?: number;
+  lensType?: string;
+  lensMaterial?: string;
+  lensPrescriptionRange?: string;
+  lensCoating?: string;
+  lensPrice?: number;
   quantity: number;
-  priceAtAddition: number;
+  unitPrice: number;
   totalPrice: number;
-  productRating: number | null;
 }
 
 // Backend cart response
 export interface BackendCartResponse {
   id: number;
-  userId: number;
-  items: BackendCartItem[];
+  userId: string; // Changed from number to string
+  items: CartItem[]; // Using the updated CartItem interface
   totalPrice: number;
   isActive: boolean;
 }

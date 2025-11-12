@@ -28,7 +28,7 @@ export class ProductListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProducts();
-    this.loadFilters();
+    // this.loadFilters(); // Removed duplicate call
   }
 
   loadProducts(): void {
